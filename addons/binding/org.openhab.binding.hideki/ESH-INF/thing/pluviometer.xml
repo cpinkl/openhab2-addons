@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="hideki"
+						  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+						  xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+						  xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Hideki/Cresta pluviometer -->
+	<thing-type id="pluviometer">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="receiver" />
+		</supported-bridge-type-refs>
+		<label>Pluviometer</label>
+		<description>Hideki/Cresta pluviometer</description>
+
+		<channels>
+			<channel id="id" typeId="sensor"/>
+			<channel id="rain" typeId="rain"/>
+			<channel id="updated" typeId="updated"/>
+			<channel id="channel" typeId="channel"/>
+			<channel id="message" typeId="message"/>
+		</channels>
+	</thing-type>
+
+	<channel-type id="rain">
+		<item-type>Number</item-type>
+		<label>Rain level</label>
+		<description>Received rain level</description>
+		<state readOnly="true"></state>
+	</channel-type>
+</thing:thing-descriptions>

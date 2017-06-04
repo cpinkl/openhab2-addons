@@ -1,0 +1,25 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Hideki Binding
+Bundle-SymbolicName: org.openhab.binding.hideki;singleton:=true
+Bundle-Vendor: openHAB
+Bundle-Version: 2.1.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-ClassPath: .,
+  lib/
+Bundle-NativeCode: lib/armv7l/libhideki.so;osname=linux;processor=armv7l,
+  *
+Import-Package: 
+ org.openhab.binding.hideki,
+ org.openhab.binding.hideki.handler,
+ org.eclipse.smarthome.config.core,
+ org.eclipse.smarthome.core.library.types,
+ org.eclipse.smarthome.core.thing,
+ org.eclipse.smarthome.core.thing.binding,
+ org.eclipse.smarthome.core.thing.binding.builder,
+ org.eclipse.smarthome.core.thing.type,
+ org.eclipse.smarthome.core.types,
+ org.slf4j
+Service-Component: OSGI-INF/*.xml
+Export-Package: org.openhab.binding.hideki,
+ org.openhab.binding.hideki.handler

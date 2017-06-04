@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="hideki"
+						  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+						  xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
+						  xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Hideki/Cresta anemometer -->
+	<thing-type id="anemometer">
+		<supported-bridge-type-refs>
+			<bridge-type-ref id="receiver" />
+		</supported-bridge-type-refs>
+		<label>Anemometer</label>
+		<description>Hideki/Cresta anemometer</description>
+
+		<channels>
+			<channel id="id" typeId="sensor"/>
+			<channel id="temperature" typeId="temperature"/>
+			<channel id="chill" typeId="chill"/>
+			<channel id="gust" typeId="gust"/>
+			<channel id="speed" typeId="speed"/>
+			<channel id="direction" typeId="direction"/>
+			<channel id="updated" typeId="updated"/>
+			<channel id="channel" typeId="channel"/>
+			<channel id="message" typeId="message"/>
+		</channels>
+	</thing-type>
+  
+	<channel-type id="chill">
+		<item-type>Number</item-type>
+		<label>Wind chill</label>
+		<description>Received wind chill</description>
+		<state readOnly="true"></state>
+	</channel-type>
+
+	<channel-type id="gust">
+		<item-type>Number</item-type>
+		<label>Wind gust</label>
+		<description>Received wind gust</description>
+		<state readOnly="true"></state>
+	</channel-type>
+
+	<channel-type id="speed">
+		<item-type>Number</item-type>
+		<label>Wind speed</label>
+		<description>Received wind speed</description>
+		<state readOnly="true"></state>
+	</channel-type>
+
+	<channel-type id="direction">
+		<item-type>Number</item-type>
+		<label>Wind direction</label>
+		<description>Received wind direction</description>
+		<state readOnly="true"></state>
+	</channel-type>
+</thing:thing-descriptions>
