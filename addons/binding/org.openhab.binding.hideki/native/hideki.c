@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 
 #include <fcntl.h>
+#include <limits.h>
 #include <math.h>
 #include <poll.h>
 #include <pthread.h>
@@ -47,29 +48,33 @@ int gpio_export(int pin)
   int result = 0;
   static char buffer[FILENAME_MAX];
   
-  struct stat state;
-  snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
-  if(stat(buffer, &state) == 0) {
-    if(S_ISDIR(state.st_mode)) {
-      gpio_unexport(pin);
-    }
-  }
+  static char pName[FILENAME_MAX];
+  snprintf(pName, sizeof(pName), "gpio%d", pin);
 
-  int fd = open("/sys/class/gpio/export", O_WRONLY);
-  if (fd >= 0) {
-    int bytes = snprintf(buffer, sizeof(buffer), "%d", pin);
-    if (write(fd, buffer, bytes) < 0) {
-      snprintf(buffer, sizeof(buffer), "Can not activate pin %d", pin);
+  // Unexport pin
+  gpio_unexport(pin);
+
+  if(result == 0) {
+    int fd = open("/sys/class/gpio/export", O_WRONLY);
+    if (fd >= 0) {
+      int bytes = snprintf(buffer, sizeof(buffer), "%d", pin);
+      if (write(fd, buffer, bytes) < 0) {
+        snprintf(buffer, sizeof(buffer), "Can not activate pin %d", pin);
+        result = -1;
+      }
+      close(fd);
+    } else {
+      snprintf(buffer, sizeof(buffer), "Can not export pin %d", pin);
       result = -1;
     }
-    close(fd);
-  } else {
-    snprintf(buffer, sizeof(buffer), "Can not export pin %d", pin);
-    result = -1;
   }
 
   if(result == 0) {
-    snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d/direction", pin);
+    snprintf(buffer, sizeof(buffer), "/sys/class/gpio/%s/direction", pName);
+    while(access(buffer, W_OK) == -1) {
+      sleep(10);
+    }
+    
     int fd = open(buffer, O_WRONLY);
     if (fd >= 0) {
       if(write(fd, "in", 2) < 0) {
@@ -84,7 +89,11 @@ int gpio_export(int pin)
   }
   
   if(result == 0) {
-    snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d/edge", pin);
+    snprintf(buffer, sizeof(buffer), "/sys/class/gpio/%s/edge", pName);
+    while(access(buffer, W_OK) == -1) {
+      sleep(10);
+    }
+
     int fd = open(buffer, O_WRONLY);
     if (fd >= 0) {
       if(write(fd, "both", 4) < 0) {
@@ -110,17 +119,23 @@ int gpio_unexport(int pin)
   int result = 0;
   static char buffer[FILENAME_MAX];
 
-  int fd = open("/sys/class/gpio/unexport", O_WRONLY);
-  if (fd >= 0) {
-    int bytes = snprintf(buffer, sizeof(buffer), "%d", pin);
-    if (write(fd, buffer, bytes) < 0) {
-      snprintf(buffer, sizeof(buffer), "Can not deactivate pin %d", pin);
-      result = -1;
+  struct stat state;
+  snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
+  if(stat(buffer, &state) == 0) {
+    if(S_ISDIR(state.st_mode) || S_ISLNK(state.st_mode)) {
+      int fd = open("/sys/class/gpio/unexport", O_WRONLY);
+      if (fd >= 0) {
+        int bytes = snprintf(buffer, sizeof(buffer), "%d", pin);
+        if (write(fd, buffer, bytes) < 0) {
+          snprintf(buffer, sizeof(buffer), "Can not deactivate pin %d", pin);
+          result = -1;
+        }
+        close(fd);
+      } else {
+        snprintf(buffer, sizeof(buffer), "Can not unexport pin %d", pin);
+        result = -1;
+      }
     }
-    close(fd);
-  } else {
-    snprintf(buffer, sizeof(buffer), "Can not unexport pin %d", pin);
-    result = -1;
   }
 
   if(result < 0) {
@@ -130,22 +145,17 @@ int gpio_unexport(int pin)
   return result;
 }
 
-/* Read value from pin
- * Read from /sys/class/gpio/gpio%d/value
+/* Read value from file with descriptor fd
  * Timeout timeout: maximal time to wait for interrupt
  * Duration duration: detected length of pulse. Is timeout, if failed
  * Result: Read value. Is 0xFF, if failed
  */
-uint8_t read_value(unsigned int pin, int timeout, unsigned int* duration)
+uint8_t read_value(int fd, int timeout, unsigned int* duration)
 {
   uint8_t result = 0xFF;  // Assume, we get error...
   static char buffer[FILENAME_MAX];
 
   *duration = timeout;
-
-  // Open pin
-  snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", pin);
-  int fd = open(buffer, O_RDONLY | O_NONBLOCK);
   if (fd >= 0) {
     // Prepare interrupt struct
     struct pollfd polldat;
@@ -172,15 +182,13 @@ uint8_t read_value(unsigned int pin, int timeout, unsigned int* duration)
       }
     } else { // poll() failed or timeout!
       if(rc < 0) { // read() failed!
-        snprintf(buffer, sizeof(buffer), "Can not read from pin %d", pin);
+        snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
       } else {
-        snprintf(buffer, sizeof(buffer), "Call of poll on pin %d failed", pin);
+        snprintf(buffer, sizeof(buffer), "Call of poll on file %d failed", fd);
       }
     }
-
-    close(fd);
   } else {
-    snprintf(buffer, sizeof(buffer), "Can not read from pin %d", pin);
+    snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
     result = 0xFF;
   }
 
@@ -217,10 +225,16 @@ void* decode(void* parameter)
   static int halfBit = 0; // Indicator for received half bit
   static uint32_t value = 0; // Received byte + parity value
   
-  while(!data->terminate) {
+  // Open pin
+  static char buffer[FILENAME_MAX];
+  snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", data->pin);
+  int fd = open(buffer, O_RDONLY | O_NONBLOCK);
+  
+  // Start decoder
+  while((data->terminate == 0) && (fd >= 0)){
     int reset = 1;
     unsigned int duration = 0;
-    read_value(data->pin, TimeOut, &duration);  // Catch next edge time
+    read_value(fd, TimeOut, &duration);  // Catch next edge time
   
     // First half bit or one
     if ((MID_TIME <= duration) && (duration < HIGH_TIME)) { // Got 1
@@ -324,6 +338,11 @@ void* decode(void* parameter)
       memset(buffer, 0, sizeof(buffer));
     }
   }
+  
+  // Close pin
+  if(fd >= 0) {
+    close(fd);
+  }
 
   return NULL;
 }
@@ -352,9 +371,10 @@ int startDecoder(int pin) {
           pthread_rwlock_destroy(&DecoderLock);
         }
       }
-      if(result != 0) {
-        gpio_unexport(pin);
-      }
+    }
+
+    if(result != 0) {
+      gpio_unexport(pin);
     }
   }
 
@@ -375,7 +395,7 @@ int stopDecoder(int pin) {
       result = gpio_unexport(pin);
     }
   }
-  
+
   memset(&DecoderData, 0, sizeof(struct DecoderData));
   return (result != 0) ? -1 : result;
 }
