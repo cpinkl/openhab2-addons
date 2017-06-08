@@ -10,10 +10,18 @@ package org.openhab.binding.hideki.handler;
 
 import static org.openhab.binding.hideki.HidekiBindingConstants.*;
 
+import java.util.Calendar;
+import java.util.Objects;
+
+import org.eclipse.smarthome.core.library.types.DateTimeType;
+import org.eclipse.smarthome.core.library.types.DecimalType;
+import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
+import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.types.Command;
+import org.eclipse.smarthome.core.types.RefreshType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +31,11 @@ import org.slf4j.LoggerFactory;
  *
  * @author Alexander Falkenstern - Initial contribution
  */
-public class HidekiBaseHandler extends BaseThingHandler {
+public abstract class HidekiBaseHandler extends BaseThingHandler {
 
     private final Logger logger = LoggerFactory.getLogger(HidekiBaseHandler.class);
+
+    private int[] data = null;
 
     public HidekiBaseHandler(Thing thing) {
         super(thing);
@@ -38,44 +48,19 @@ public class HidekiBaseHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         logger.debug("Handle command {} on channel {}", command, channelUID);
 
-        final String channelId = channelUID.getId();
-        if (RECEIVED_UPDATE.equals(channelId)) {
-            // TODO: handle command
-
-            // Note: if communication with thing fails for some reason,
-            // indicate that by setting the status with detail information
-            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-            // "Could not control device at IP address x.x.x.x");
-        } else if (SENSOR_ID.equals(channelId)) {
-            // TODO: handle command
-
-            // Note: if communication with thing fails for some reason,
-            // indicate that by setting the status with detail information
-            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-            // "Could not control device at IP address x.x.x.x");
-        } else if (SENSOR_CHANNEL.equals(channelId)) {
-            // TODO: handle command
-
-            // Note: if communication with thing fails for some reason,
-            // indicate that by setting the status with detail information
-            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-            // "Could not control device at IP address x.x.x.x");
-        } else if (SENSOR_TYPE.equals(channelId)) {
-            // TODO: handle command
-
-            // Note: if communication with thing fails for some reason,
-            // indicate that by setting the status with detail information
-            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-            // "Could not control device at IP address x.x.x.x");
-        } else if (MESSAGE_NUMBER.equals(channelId)) {
-            // TODO: handle command
-
-            // Note: if communication with thing fails for some reason,
-            // indicate that by setting the status with detail information
-            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-            // "Could not control device at IP address x.x.x.x");
-        } else {
-            logger.warn("Received command {} on unknown channel {}.", command, channelUID);
+        if (command instanceof RefreshType && (data != null)) {
+            final String channelId = channelUID.getId();
+            if (SENSOR_ID.equals(channelId)) {
+                updateState(channelUID, new DecimalType(getSensorId()));
+            } else if (SENSOR_CHANNEL.equals(channelId)) {
+                updateState(channelUID, new DecimalType(getChannel()));
+            } else if (MESSAGE_NUMBER.equals(channelId)) {
+                updateState(channelUID, new DecimalType(getMessageNumber()));
+            } else if (RECEIVED_UPDATE.equals(channelId)) {
+                // No update of received time
+            } else {
+                logger.warn("Received command {} on unknown channel {}.", command, channelUID);
+            }
         }
     }
 
@@ -84,16 +69,12 @@ public class HidekiBaseHandler extends BaseThingHandler {
      */
     @Override
     public void initialize() {
-        // TODO: Initialize the thing. If done set status to ONLINE to indicate proper working.
-        // Long running initialization should be done asynchronously in background.
-        super.initialize();
+        final Thing thing = getThing();
+        Objects.requireNonNull(thing, "HidekiBaseHandler: Thing may not be null.");
 
-        // Note: When initialization can NOT be done set the status with more details for further
-        // analysis. See also class ThingStatusDetail for all available status details.
-        // Add a description to give user information to understand why thing does not work
-        // as expected. E.g.
-        // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR,
-        // "Can not access device as username and/or password are invalid");
+        logger.debug("Initialize Hideki base handler.");
+
+        super.initialize();
     }
 
     /**
@@ -101,6 +82,108 @@ public class HidekiBaseHandler extends BaseThingHandler {
      */
     @Override
     public void dispose() {
+        logger.debug("Dispose Hideki base handler.");
         super.dispose();
+        data = null;
     }
+
+    /**
+     * Update sensor values of current thing with new data.
+     *
+     * @param data Data value to update with
+     */
+    public void setData(final int[] data) {
+        final Thing thing = getThing();
+        Objects.requireNonNull(thing, "HidekiBaseHandler: Thing may not be null.");
+        if (ThingStatus.ONLINE != thing.getStatus()) {
+            return;
+        }
+
+        synchronized (this.data) {
+            if (this.data == null) {
+                this.data = new int[data.length];
+            }
+            System.arraycopy(data, 0, this.data, 0, data.length);
+        }
+
+        if (getSensorType() == getDecodedType()) {
+            if (data.length == getDecodedLength()) {
+                final Channel uChannel = thing.getChannel(RECEIVED_UPDATE);
+                updateState(uChannel.getUID(), new DateTimeType(Calendar.getInstance()));
+
+                final Channel iChannel = thing.getChannel(SENSOR_ID);
+                updateState(iChannel.getUID(), new DecimalType(getSensorId()));
+
+                final Channel cChannel = thing.getChannel(SENSOR_CHANNEL);
+                updateState(cChannel.getUID(), new DecimalType(getChannel()));
+
+                final Channel nChannel = thing.getChannel(MESSAGE_NUMBER);
+                updateState(nChannel.getUID(), new DecimalType(getMessageNumber()));
+            } else {
+                logger.error("Got wrong sensor data length {}.", data.length);
+            }
+        }
+    }
+
+    /**
+     * Returns sensor type supported by handler.
+     *
+     * @return Supported sensor type
+     */
+    protected abstract int getSensorType();
+
+    /**
+     * Returns decoded sensor type. Is negative, if decoder failed.
+     *
+     * @return Decoded sensor type
+     */
+    protected int getDecodedType() {
+        return data.length < 4 ? -1 : data[3] & 0x1F;
+    }
+
+    /**
+     * Returns decoded data length. Is negative, if decoder failed.
+     *
+     * @return Decoded sensor type
+     */
+    protected int getDecodedLength() {
+        return data.length < 3 ? -1 : (data[2] >> 1) & 0x1F;
+    }
+
+    /**
+     * Returns decoded sensor id. Is negative, if decoder failed.
+     *
+     * @return Decoded sensor id
+     */
+    private int getSensorId() {
+        return data.length < 2 ? -1 : data[1] & 0x1F;
+    }
+
+    /**
+     * Returns decoded sensor channel is used for transmission. Is not
+     * zero for thermo/hygrometer only. Is negative, if decoder failed.
+     *
+     * @return Decoded sensor channel
+     */
+    private int getChannel() {
+        int channel = data.length < 2 ? -1 : data[1] >> 5;
+        if ((channel == 5) || (channel == 6)) {
+            channel = channel - 1;
+        } else if (channel > 3) {
+            channel = 0;
+        }
+
+        return channel;
+    }
+
+    /**
+     * Returns decoded received message number. Is negative, if
+     * decoder failed.
+     *
+     * @return Decoded message number
+     */
+    public int getMessageNumber() {
+        return data.length < 4 ? -1 : data[3] >> 6;
+    }
+
 }

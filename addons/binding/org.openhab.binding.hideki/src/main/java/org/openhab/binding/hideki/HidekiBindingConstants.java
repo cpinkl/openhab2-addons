@@ -50,5 +50,5 @@ public class HidekiBindingConstants {
 
     // UV-Meter channels
     public static final String MED = "med";
-    public static final String UV = "uv";
+    public static final String UV_INDEX = "uv";
 }

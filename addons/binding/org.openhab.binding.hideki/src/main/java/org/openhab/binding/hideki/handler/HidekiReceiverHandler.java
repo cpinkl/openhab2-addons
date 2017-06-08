@@ -55,11 +55,12 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                             continue;
                         }
 
+                        handler.setData(data);
+                        // if (logger.isTraceEnabled()) {
                         logger.info("Fetched new data: {}.", Arrays.toString(data));
+                        // }
                     }
                 }
-            } else {
-                // logger.error("Can not read data from decoder.");
             }
         }
     };
@@ -88,8 +89,6 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
      */
     @Override
     public void initialize() {
-        logger.debug("Initialize Hideki receiver handler.");
-
         final Thing thing = getThing();
         Objects.requireNonNull(thing, "HidekiReceiverHandler: Thing may not be null.");
 
@@ -97,28 +96,36 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
             config = getConfigAs(HidekiReceiverConfiguration.class);
         }
 
-        boolean configured = (config.getGpioPin() != null);
-        configured = configured && (config.getRefreshRate() != null);
-        configured = configured && (config.getTimeout() != null);
+        logger.debug("Initialize Hideki receiver handler.");
 
-        if (configured) {
-            final Integer pin = config.getGpioPin();
-            HidekiDecoder.setTimeOut(config.getTimeout().intValue());
-            if (HidekiDecoder.startDecoder(pin.intValue()) == 0) {
-                if (readerJob == null) {
-                    final Integer interval = config.getRefreshRate();
-                    logger.info("Creating new reader job on pin {} with interval {} ms.", pin, interval.toString());
-                    readerJob = scheduler.scheduleWithFixedDelay(dataReader, 100, interval, TimeUnit.MILLISECONDS);
+        scheduler.execute(new Runnable() {
+            @Override
+            public void run() {
+                boolean configured = (config.getGpioPin() != null);
+                configured = configured && (config.getRefreshRate() != null);
+                configured = configured && (config.getTimeout() != null);
+
+                if (configured) {
+                    final Integer pin = config.getGpioPin();
+                    HidekiDecoder.setTimeOut(config.getTimeout().intValue());
+                    if (HidekiDecoder.startDecoder(pin.intValue()) == 0) {
+                        if (readerJob == null) {
+                            final Integer interval = config.getRefreshRate();
+                            logger.info("Creating new reader job on pin {} with interval {} ms.", pin, interval);
+                            readerJob = scheduler.scheduleWithFixedDelay(dataReader, 100, interval,
+                                    TimeUnit.MILLISECONDS);
+                        }
+                        HidekiReceiverHandler.super.initialize();
+                    } else {
+                        final String message = "Can not start decoder on pin: " + pin.toString() + ".";
+                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, message);
+                    }
+                } else {
+                    final String message = "Can not initialize decoder. Please, check parameter.";
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, message);
                 }
-                HidekiReceiverHandler.super.initialize();
-            } else {
-                final String message = "Can not start decoder on pin " + pin.toString() + ".";
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, message);
             }
-        } else {
-            final String message = "Can not initialize decoder. Please, check parameter.";
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, message);
-        }
+        });
     }
 
     /**
@@ -141,7 +148,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
             }
             readerJob = null;
             HidekiDecoder.stopDecoder(config.getGpioPin().intValue());
-            logger.info("Destroy reader job.");
+            logger.info("Destroy hideki reader job.");
         }
     }
 
@@ -154,11 +161,12 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
         if (childHandler instanceof HidekiBaseHandler) {
             final HidekiBaseHandler handler = (HidekiBaseHandler) childHandler;
             synchronized (handlers) {
+                final String type = String.format("%02X", handler.getSensorType());
                 if (!handlers.contains(handler)) {
                     handlers.add(handler);
-                    // logger.debug("Insert handler for block {}.", name);
+                    logger.debug("Insert handler for sensor 0x{}.", type);
                 } else {
-                    // logger.info("Handler {} for block {} already registered.", childThing.getUID(), name);
+                    logger.info("Handler {} for sensor 0x{} already registered.", childThing.getUID(), type);
                 }
             }
         }
@@ -172,12 +180,12 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
         if (childHandler instanceof HidekiBaseHandler) {
             final HidekiBaseHandler handler = (HidekiBaseHandler) childHandler;
             synchronized (handlers) {
-                // final String name = handler.getBlockName();
+                final String type = String.format("%02X", handler.getSensorType());
                 if (handlers.contains(handler)) {
                     handlers.remove(handler);
-                    // logger.debug("Remove handler for block {}.", name);
+                    logger.debug("Remove handler for sensor 0x{}.", type);
                 } else {
-                    // logger.info("Handler {} for block {} already disposed.", childThing.getUID(), name);
+                    logger.info("Handler {} for sensor 0x{} already disposed.", childThing.getUID(), type);
                 }
             }
         }
