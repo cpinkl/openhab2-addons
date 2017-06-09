@@ -21,10 +21,9 @@ public class HidekiDecoder {
     }
 
     public static native void setTimeOut(int timeout);
+    public static native void setLogFile(String path);
 
     public static native int startDecoder(int pin);
-
     public static native int stopDecoder(int pin);
-
     public static native int[] getDecodedData();
 }

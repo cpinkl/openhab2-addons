@@ -27,6 +27,13 @@ void JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_setTimeOut(J
   (*env)->MonitorExit(env, obj);
 }
 
+void JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_setLogFile(JNIEnv* env, jclass obj, jstring path)
+{
+  (*env)->MonitorEnter(env, obj);
+  setLogFile((*env)->GetStringUTFChars(env, path, NULL));
+  (*env)->MonitorExit(env, obj);
+}
+
 jint JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_startDecoder(JNIEnv* env, jclass obj, jint pin)
 {
   jint result = 0;

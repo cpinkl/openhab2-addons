@@ -17,6 +17,14 @@ JNIEXPORT void JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_se
 
 /*
  * Class:     org_openhab_binding_hideki_internal_HidekiDecoder
+ * Method:    setLogFile
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_setLogFile
+  (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     org_openhab_binding_hideki_internal_HidekiDecoder
  * Method:    startDecoder
  * Signature: (I)I
  */

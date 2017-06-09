@@ -6,6 +6,7 @@
 #define DATA_BUFFER_LENGTH 14
 
 void setTimeOut(int timeout);
+void setLogFile(const char* name);
 
 int startDecoder(int pin);
 int stopDecoder(int pin);

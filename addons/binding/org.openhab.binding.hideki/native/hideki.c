@@ -157,16 +157,7 @@ uint8_t read_value(int fd, int timeout, unsigned int* duration)
 
   *duration = timeout;
   if (fd >= 0) {
-    // Prepare interrupt struct
-    struct pollfd polldat;
-    memset(&polldat, 0, sizeof(polldat));
-    polldat.fd = fd;
-    polldat.events = POLLPRI;
-
-    // delete possible interrupts
-    lseek(fd, 0, SEEK_SET);
-    memset(buffer, 0, sizeof(buffer));
-    int rc = read(fd, buffer, FILENAME_MAX - 1);
+    struct pollfd polldat = {fd, POLLPRI, 0}; // Prepare interrupt struct
 
     static struct timespec tOld;
     clock_gettime(CLOCK_REALTIME, &tOld);
@@ -176,20 +167,20 @@ uint8_t read_value(int fd, int timeout, unsigned int* duration)
     
     if (pc > 0) {
       if (polldat.revents & POLLPRI) {
-        result = atoi(buffer);
-        // Pulse lenght in microseconds
-        *duration = round((tNew.tv_nsec - tOld.tv_nsec) / 1000.0);
+        lseek(polldat.fd, 0, SEEK_SET);
+        memset(buffer, 0, sizeof(buffer));
+        if(read(fd, buffer, FILENAME_MAX - 1) >= 0) {
+          result = atoi(buffer);
+          *duration = round((tNew.tv_nsec - tOld.tv_nsec) / 1000.0); // Pulse lenght in microseconds
+        } else {  // read() failed
+          snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
+        }
       }
     } else { // poll() failed or timeout!
-      if(rc < 0) { // read() failed!
-        snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
-      } else {
-        snprintf(buffer, sizeof(buffer), "Call of poll on file %d failed", fd);
-      }
+      snprintf(buffer, sizeof(buffer), "Call of poll on file %d failed", fd);
     }
   } else {
     snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
-    result = 0xFF;
   }
 
   if(result == 0xFF) {
@@ -200,6 +191,8 @@ uint8_t read_value(int fd, int timeout, unsigned int* duration)
 }
 
 int TimeOut = 5000;
+FILE* LogFile = NULL;
+
 pthread_t DecoderThread;
 pthread_rwlock_t DecoderLock = PTHREAD_RWLOCK_INITIALIZER;
 struct DecoderData {
@@ -224,18 +217,21 @@ void* decode(void* parameter)
   static int count = 0;   // Current bit count
   static int halfBit = 0; // Indicator for received half bit
   static uint32_t value = 0; // Received byte + parity value
-  
+
   // Open pin
   static char buffer[FILENAME_MAX];
   snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", data->pin);
   int fd = open(buffer, O_RDONLY | O_NONBLOCK);
-  
+
   // Start decoder
-  while((data->terminate == 0) && (fd >= 0)){
-    int reset = 1;
+  while((data->terminate == 0) && (fd >= 0)) {
     unsigned int duration = 0;
-    read_value(fd, TimeOut, &duration);  // Catch next edge time
+    int edge = read_value(fd, TimeOut, &duration);  // Catch next edge time
+    if(LogFile != NULL) {
+      fprintf(LogFile, "%u %d\n", duration, edge);
+    }
   
+    int reset = 1;
     // First half bit or one
     if ((MID_TIME <= duration) && (duration < HIGH_TIME)) { // Got 1
       value = value + 1;
@@ -338,7 +334,7 @@ void* decode(void* parameter)
       memset(buffer, 0, sizeof(buffer));
     }
   }
-  
+
   // Close pin
   if(fd >= 0) {
     close(fd);
@@ -350,6 +346,17 @@ void* decode(void* parameter)
 void setTimeOut(int timeout) {
   if(timeout > 0) {
     TimeOut = timeout;
+  }
+}
+
+void setLogFile(const char* name)
+{
+  if(name != NULL) {
+    if(LogFile != NULL) { // Open log file
+      fflush(LogFile);
+      fclose(LogFile);
+    }
+    LogFile = fopen(name, "w");
   }
 }
 
@@ -365,11 +372,11 @@ int startDecoder(int pin) {
     result = gpio_export(pin);
     if(result == 0) {
       result = pthread_rwlock_init(&DecoderLock, NULL);
-      if(result == 0) {
-        result = pthread_create(&DecoderThread, NULL, decode, &DecoderData);
-        if(result != 0) {
-          pthread_rwlock_destroy(&DecoderLock);
-        }
+    }
+    if(result == 0) {
+      result = pthread_create(&DecoderThread, NULL, decode, &DecoderData);
+      if(result != 0) {
+        pthread_rwlock_destroy(&DecoderLock);
       }
     }
 
@@ -395,6 +402,12 @@ int stopDecoder(int pin) {
       result = gpio_unexport(pin);
     }
   }
+  
+  if(LogFile != NULL) {
+    fflush(LogFile);
+    fclose(LogFile);
+    LogFile = NULL;
+  }
 
   memset(&DecoderData, 0, sizeof(struct DecoderData));
   return (result != 0) ? -1 : result;
@@ -410,10 +423,9 @@ int getDecodedData(uint8_t data[DATA_BUFFER_LENGTH]) {
   if(DecoderData.ready == 1) {
     memcpy(data, DecoderData.data, sizeof(DecoderData.data));
     result = (data[2] >> 1) & 0x1F;
-
     pthread_rwlock_unlock(&DecoderLock);
-    pthread_rwlock_wrlock(&DecoderLock);
 
+    pthread_rwlock_wrlock(&DecoderLock);
     DecoderData.ready = 0;
     memset(DecoderData.data, 0, sizeof(DecoderData.data));
   }
