@@ -13,7 +13,7 @@
 		<description>Hideki/Cresta UV-meter</description>
 
 		<channels>
-			<channel id="id" typeId="sensor"/>
+			<channel id="sensor" typeId="sensor"/>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="uv" typeId="uv"/>
 			<channel id="med" typeId="med"/>

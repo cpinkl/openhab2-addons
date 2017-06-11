@@ -13,7 +13,7 @@
 		<description>Hideki/Cresta pluviometer</description>
 
 		<channels>
-			<channel id="id" typeId="sensor"/>
+			<channel id="sensor" typeId="sensor"/>
 			<channel id="rain" typeId="rain"/>
 			<channel id="updated" typeId="updated"/>
 			<channel id="channel" typeId="channel"/>

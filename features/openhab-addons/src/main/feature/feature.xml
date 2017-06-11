@@ -167,6 +167,11 @@
         <bundle start-level="80">mvn:org.openhab.binding/org.openhab.binding.netatmo/${project.version}</bundle>
     </feature>
 
+    <feature name="openhab-binding-hideki" description="Hideki/Cresta Weather Station Binding" version="${project.version}">
+        <feature>openhab-runtime-base</feature>
+        <bundle start-level="80">mvn:org.openhab.binding/org.openhab.binding.hideki/${project.version}</bundle>
+    </feature>
+
     <feature name="openhab-binding-homematic" description="Homematic Binding" version="${project.version}">
         <feature>openhab-runtime-base</feature>
         <feature>openhab-transport-upnp</feature>

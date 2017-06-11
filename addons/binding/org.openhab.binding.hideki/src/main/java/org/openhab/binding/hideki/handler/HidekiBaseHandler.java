@@ -99,7 +99,7 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
             return;
         }
 
-        synchronized (this.data) {
+        synchronized (this) {
             if (this.data == null) {
                 this.data = new int[data.length];
             }
@@ -147,7 +147,8 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
      * @return Decoded sensor type
      */
     protected int getDecodedLength() {
-        return data.length < 3 ? -1 : (data[2] >> 1) & 0x1F;
+        final int length = data.length < 3 ? -1 : (data[2] >> 1) & 0x1F;
+        return length < 0 ? length : length + 1;
     }
 
     /**

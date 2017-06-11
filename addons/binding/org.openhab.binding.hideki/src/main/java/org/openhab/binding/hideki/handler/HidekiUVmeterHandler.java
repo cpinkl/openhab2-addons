@@ -103,7 +103,7 @@ public class HidekiUVmeterHandler extends HidekiBaseHandler {
                     logger.trace("Got new UV-meter data: {}.", raw);
                 }
 
-                synchronized (this.data) {
+                synchronized (this) {
                     if (this.data == null) {
                         this.data = new int[data.length];
                     }

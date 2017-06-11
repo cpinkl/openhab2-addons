@@ -46,8 +46,8 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
     private final Runnable dataReader = new Runnable() {
         @Override
         public void run() {
-            int[] data = HidekiDecoder.getDecodedData();
-            if (data != null) {
+            final int[] data = HidekiDecoder.getDecodedData();
+            if ((data != null) && (data[0] == 0x9F)) {
                 synchronized (handlers) {
                     for (HidekiBaseHandler handler : handlers) {
                         if (handler == null) {
@@ -56,11 +56,11 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                         }
 
                         handler.setData(data);
-                        // if (logger.isTraceEnabled()) {
-                        logger.info("Fetched new data: {}.", Arrays.toString(data));
-                        // }
                     }
                 }
+                // if (logger.isTraceEnabled()) {
+                logger.info("Fetched new data: {}.", Arrays.toString(data));
+                // }
             }
         }
     };
@@ -147,7 +147,9 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                 }
             }
             readerJob = null;
-            HidekiDecoder.stopDecoder(config.getGpioPin().intValue());
+
+            final Integer pin = config.getGpioPin();
+            HidekiDecoder.stopDecoder(pin.intValue());
             logger.info("Destroy hideki reader job.");
         }
     }

@@ -13,7 +13,7 @@
 		<description>Hideki/Cresta anemometer</description>
 
 		<channels>
-			<channel id="id" typeId="sensor"/>
+			<channel id="sensor" typeId="sensor"/>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="chill" typeId="chill"/>
 			<channel id="gust" typeId="gust"/>

@@ -13,7 +13,7 @@
 		<description>Hideki/Cresta thermometer</description>
 
 		<channels>
-			<channel id="id" typeId="sensor"/>
+			<channel id="sensor" typeId="sensor"/>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="humidity" typeId="humidity"/>
 			<channel id="battery" typeId="battery"/>
