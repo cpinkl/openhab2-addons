@@ -31,6 +31,20 @@
 #include <string.h>
 #include <unistd.h>
 
+FILE* LogFile = NULL;
+void log_data(const char* function, uint8_t data[DATA_BUFFER_LENGTH])
+{
+  time_t rawtime;
+  time(&rawtime);
+  fprintf(LogFile, "%s %s", function, asctime(localtime(&rawtime)));
+  int i = 0;
+  for(i = 0; i < DATA_BUFFER_LENGTH; i++) {
+    fprintf(LogFile, "%2hhx ", data[i]);
+  }
+  fprintf(LogFile, "\n");
+  fflush(LogFile);
+}
+
 /* Activate GPIO-Pin
  * Write pin number to /sys/class/gpio/export
  * Result: 0 = O.K., -1 = Error
@@ -145,19 +159,26 @@ int gpio_unexport(int pin)
   return result;
 }
 
-/* Read value from file with descriptor fd
+/* Read value from pin
  * Timeout timeout: maximal time to wait for interrupt
  * Duration duration: detected length of pulse. Is timeout, if failed
  * Result: Read value. Is 0xFF, if failed
  */
-uint8_t read_value(int fd, int timeout, unsigned int* duration)
+uint8_t read_value(unsigned int pin, int timeout, unsigned int* duration)
 {
   uint8_t result = 0xFF;  // Assume, we get error...
   static char buffer[FILENAME_MAX];
 
+  // Prepare interrupt struct
+  snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", pin);
+  struct pollfd polldat = {0};
+  polldat.fd = open(buffer, O_RDONLY);
+  polldat.events = POLLPRI | POLLERR;
   *duration = timeout;
-  if (fd >= 0) {
-    struct pollfd polldat = {fd, POLLPRI, 0}; // Prepare interrupt struct
+
+  if (polldat.fd >= 0) {
+    memset(buffer, 0, sizeof(buffer));
+    read(polldat.fd, buffer, sizeof(buffer));
 
     static struct timespec tOld;
     clock_gettime(CLOCK_REALTIME, &tOld);
@@ -167,20 +188,21 @@ uint8_t read_value(int fd, int timeout, unsigned int* duration)
     
     if (pc > 0) {
       if (polldat.revents & POLLPRI) {
-        lseek(polldat.fd, 0, SEEK_SET);
         memset(buffer, 0, sizeof(buffer));
-        if(read(fd, buffer, FILENAME_MAX - 1) >= 0) {
+        lseek(polldat.fd, 0, SEEK_SET);
+        if(read(polldat.fd, buffer, sizeof(buffer)) >= 0) {
           result = atoi(buffer);
           *duration = round((tNew.tv_nsec - tOld.tv_nsec) / 1000.0); // Pulse lenght in microseconds
         } else {  // read() failed
-          snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
+          snprintf(buffer, sizeof(buffer), "Can not read from pin %d", pin);
         }
       }
     } else { // poll() failed or timeout!
-      snprintf(buffer, sizeof(buffer), "Call of poll on file %d failed", fd);
+      snprintf(buffer, sizeof(buffer), "Call of poll on pin %d failed", pin);
     }
+    close(polldat.fd);
   } else {
-    snprintf(buffer, sizeof(buffer), "Can not read from file %d", fd);
+    snprintf(buffer, sizeof(buffer), "Can not open pin %d for read", pin);
   }
 
   if(result == 0xFF) {
@@ -191,8 +213,6 @@ uint8_t read_value(int fd, int timeout, unsigned int* duration)
 }
 
 int TimeOut = 5000;
-FILE* LogFile = NULL;
-
 pthread_t DecoderThread;
 pthread_rwlock_t DecoderLock = PTHREAD_RWLOCK_INITIALIZER;
 struct DecoderData {
@@ -218,17 +238,12 @@ void* decode(void* parameter)
   static int halfBit = 0; // Indicator for received half bit
   static uint32_t value = 0; // Received byte + parity value
 
-  // Open pin
-  static char buffer[FILENAME_MAX];
-  snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", data->pin);
-  int fd = open(buffer, O_RDONLY | O_NONBLOCK);
-
   // Start decoder
-  while((data->terminate == 0) && (fd >= 0)) {
+  while(data->terminate == 0) {
     unsigned int duration = 0;
-    int edge = read_value(fd, TimeOut, &duration);  // Catch next edge time
+    int edge = read_value(data->pin, TimeOut, &duration);  // Catch next edge time
     if(LogFile != NULL) {
-      fprintf(LogFile, "%u %d\n", duration, edge);
+//      fprintf(LogFile, "%u %d\n", duration, edge);
     }
   
     int reset = 1;
@@ -250,7 +265,7 @@ void* decode(void* parameter)
     }
 
     static uint8_t byte = 0;
-    static uint8_t buffer[sizeof(data->data)] = {0};
+    static uint8_t buffer[DATA_BUFFER_LENGTH] = {0};
     int length = sizeof(buffer) / sizeof(buffer[0]) + 1;
     if((byte > 2) && (reset == 0)) {
       length = (buffer[2] >> 1) & 0x1F;
@@ -316,6 +331,9 @@ void* decode(void* parameter)
             pthread_rwlock_wrlock(&DecoderLock);
             data->ready = 1;
             memcpy(data->data, buffer, sizeof(buffer));
+            if(LogFile != NULL) {
+              log_data("decode", data->data);
+            }
             pthread_rwlock_unlock(&DecoderLock);
           }
           reset = 1;
@@ -333,11 +351,6 @@ void* decode(void* parameter)
       halfBit = 0;
       memset(buffer, 0, sizeof(buffer));
     }
-  }
-
-  // Close pin
-  if(fd >= 0) {
-    close(fd);
   }
 
   return NULL;
@@ -428,6 +441,9 @@ int getDecodedData(uint8_t data[DATA_BUFFER_LENGTH]) {
     pthread_rwlock_wrlock(&DecoderLock);
     DecoderData.ready = 0;
     memset(DecoderData.data, 0, sizeof(DecoderData.data));
+    if(LogFile != NULL) {
+      log_data("getDecodedData", data);
+    }
   }
   pthread_rwlock_unlock(&DecoderLock);
   

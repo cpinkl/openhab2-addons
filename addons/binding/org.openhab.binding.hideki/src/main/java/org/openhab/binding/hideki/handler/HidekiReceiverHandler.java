@@ -108,6 +108,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                 if (configured) {
                     final Integer pin = config.getGpioPin();
                     HidekiDecoder.setTimeOut(config.getTimeout().intValue());
+                    HidekiDecoder.setLogFile("/var/log/openhab2/hideki.log");
                     if (HidekiDecoder.startDecoder(pin.intValue()) == 0) {
                         if (readerJob == null) {
                             final Integer interval = config.getRefreshRate();
@@ -148,8 +149,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
             }
             readerJob = null;
 
-            final Integer pin = config.getGpioPin();
-            HidekiDecoder.stopDecoder(pin.intValue());
+            HidekiDecoder.stopDecoder(config.getGpioPin().intValue());
             logger.info("Destroy hideki reader job.");
         }
     }

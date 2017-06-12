@@ -3,7 +3,7 @@
 
 #include <inttypes.h>
 
-#define DATA_BUFFER_LENGTH 14
+#define DATA_BUFFER_LENGTH 15
 
 void setTimeOut(int timeout);
 void setLogFile(const char* name);
