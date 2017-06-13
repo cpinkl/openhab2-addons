@@ -58,9 +58,9 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                         handler.setData(data);
                     }
                 }
-                // if (logger.isTraceEnabled()) {
-                logger.info("Fetched new data: {}.", Arrays.toString(data));
-                // }
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Fetched new data: {}.", Arrays.toString(data));
+                }
             }
         }
     };
@@ -74,14 +74,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
      */
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        // if (channelUID.getId().equals(CHANNEL_1)) {
-        // TODO: handle command
-
-        // Note: if communication with thing fails for some reason,
-        // indicate that by setting the status with detail information
-        // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR,
-        // "Could not control device at IP address x.x.x.x");
-        // }
+        // Receiver will process no commands
     }
 
     /**
@@ -108,13 +101,11 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                 if (configured) {
                     final Integer pin = config.getGpioPin();
                     HidekiDecoder.setTimeOut(config.getTimeout().intValue());
-                    HidekiDecoder.setLogFile("/var/log/openhab2/hideki.log");
                     if (HidekiDecoder.startDecoder(pin.intValue()) == 0) {
                         if (readerJob == null) {
                             final Integer interval = config.getRefreshRate();
                             logger.info("Creating new reader job on pin {} with interval {} ms.", pin, interval);
-                            readerJob = scheduler.scheduleWithFixedDelay(dataReader, 100, interval,
-                                    TimeUnit.MILLISECONDS);
+                            readerJob = scheduler.scheduleWithFixedDelay(dataReader, 1, interval, TimeUnit.SECONDS);
                         }
                         HidekiReceiverHandler.super.initialize();
                     } else {

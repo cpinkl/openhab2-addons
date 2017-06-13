@@ -18,7 +18,7 @@ import java.util.Objects;
 public class HidekiReceiverConfiguration {
 
     private Integer pin = null;
-    private Integer refresh = 100;
+    private Integer refresh = 1;
     private Integer timeout = 5000;
 
     public HidekiReceiverConfiguration() {
@@ -44,7 +44,7 @@ public class HidekiReceiverConfiguration {
     }
 
     /**
-     * Get configured refresh rate for new decoder data check in milliseconds.
+     * Get configured refresh rate for new decoder data check in seconds.
      *
      * @return Configured refresh rate for new decoder data check
      */
@@ -53,7 +53,7 @@ public class HidekiReceiverConfiguration {
     }
 
     /**
-     * Set refresh rate for new decoder data check in milliseconds.
+     * Set refresh rate for new decoder data check in seconds.
      *
      * @param rate Refresh rate for new decoder data check
      */

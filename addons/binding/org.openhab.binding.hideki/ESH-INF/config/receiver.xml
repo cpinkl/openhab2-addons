@@ -9,9 +9,9 @@
 			<description>GPIO pin receiver connected to.</description>
 			<required>true</required>
 		</parameter>
-		<parameter name="refresh" type="integer" min="100" step="50">
+		<parameter name="refresh" type="integer" min="1" step="1">
 			<label>Refresh interval</label>
-			<description>Milliseconds between reread data from receiver.</description>
+			<description>Seconds between reread data from receiver.</description>
 			<required>false</required>
 			<default>100</default>
 		</parameter>
