@@ -104,7 +104,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                     if (HidekiDecoder.startDecoder(pin.intValue()) == 0) {
                         if (readerJob == null) {
                             final Integer interval = config.getRefreshRate();
-                            logger.info("Creating new reader job on pin {} with interval {} ms.", pin, interval);
+                            logger.info("Creating new reader job on pin {} with interval {} sec.", pin, interval);
                             readerJob = scheduler.scheduleWithFixedDelay(dataReader, 1, interval, TimeUnit.SECONDS);
                         }
                         HidekiReceiverHandler.super.initialize();

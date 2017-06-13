@@ -99,8 +99,8 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
             return;
         }
 
-        super.setData(data); // Decode common parts first
-        if (TYPE == getDecodedType()) {
+        if (TYPE == getDecodedType(data)) {
+            super.setData(data); // Decode common parts first
             if (data.length == getDecodedLength()) {
                 if (logger.isTraceEnabled()) {
                     final String raw = Arrays.toString(data);

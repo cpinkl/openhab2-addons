@@ -99,14 +99,14 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
             return;
         }
 
-        synchronized (this) {
-            if (this.data == null) {
-                this.data = new int[data.length];
+        if (getSensorType() == getDecodedType(data)) {
+            synchronized (this) {
+                if (this.data == null) {
+                    this.data = new int[data.length];
+                }
+                System.arraycopy(data, 0, this.data, 0, data.length);
             }
-            System.arraycopy(data, 0, this.data, 0, data.length);
-        }
 
-        if (getSensorType() == getDecodedType()) {
             if (data.length == getDecodedLength()) {
                 final Channel uChannel = thing.getChannel(RECEIVED_UPDATE);
                 updateState(uChannel.getUID(), new DateTimeType(Calendar.getInstance()));
@@ -137,8 +137,8 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
      *
      * @return Decoded sensor type
      */
-    protected int getDecodedType() {
-        return data.length < 4 ? -1 : data[3] & 0x1F;
+    protected static int getDecodedType(final int[] data) {
+        return (data == null) || (data.length < 4) ? -1 : data[3] & 0x1F;
     }
 
     /**
