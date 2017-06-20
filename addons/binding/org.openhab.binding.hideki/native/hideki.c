@@ -245,6 +245,10 @@ void* decode(void* parameter)
     if(LogFile != NULL) {
 //      fprintf(LogFile, "%u %d\n", duration, edge);
     }
+    
+    if(duration < 20) { // Filter pulses shorter than 20 microseconds
+      continue;
+    }
   
     int reset = 1;
     // First half bit or one

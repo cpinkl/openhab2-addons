@@ -8,6 +8,8 @@ INCLUDE	   = -I/$(JAVA_HOME)/include                           \
              -I/usr/lib/jvm/jdk-8-oracle/include/linux         \
              -I/usr/lib/jvm/jdk-8-oracle-arm32-vfp-hflt/include       \
              -I/usr/lib/jvm/jdk-8-oracle-arm32-vfp-hflt/include/linux \
+             -I/usr/lib/jvm/java-8-oracle/include              \
+             -I/usr/lib/jvm/java-8-oracle/include/linux        \
              -I/usr/lib/jvm/java-8-openjdk-armhf/include       \
              -I/usr/lib/jvm/java-8-openjdk-armhf/include/linux \
              -I/usr/local/include -I/usr/local/include/linux
