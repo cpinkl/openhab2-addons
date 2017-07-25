@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2017 by the respective copyright holders.
+ * Copyright (c) 2010-2018 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -13,17 +13,21 @@ import static org.openhab.binding.plclogo.PLCLogoBindingConstants.*;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingTypeUID;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandlerFactory;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
+import org.eclipse.smarthome.core.thing.binding.ThingHandlerFactory;
 import org.openhab.binding.plclogo.handler.PLCAnalogHandler;
 import org.openhab.binding.plclogo.handler.PLCBridgeHandler;
 import org.openhab.binding.plclogo.handler.PLCDateTimeHandler;
 import org.openhab.binding.plclogo.handler.PLCDigitalHandler;
 import org.openhab.binding.plclogo.handler.PLCMemoryHandler;
 import org.openhab.binding.plclogo.handler.PLCPulseHandler;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.ConfigurationPolicy;
 
 /**
  * The {@link PLCLogoHandlerFactory} is responsible for creating things and
@@ -31,9 +35,10 @@ import org.openhab.binding.plclogo.handler.PLCPulseHandler;
  *
  * @author Alexander Falkenstern - Initial contribution
  */
+@Component(service = ThingHandlerFactory.class, immediate = true, configurationPid = "binding.plclogo", configurationPolicy = ConfigurationPolicy.OPTIONAL)
 public class PLCLogoHandlerFactory extends BaseThingHandlerFactory {
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = new HashSet<ThingTypeUID>();
+    private static final @NonNull Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = new HashSet<ThingTypeUID>();
 
     /**
      * Constructor.

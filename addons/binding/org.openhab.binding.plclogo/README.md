@@ -10,6 +10,7 @@ Binding works nicely at least 100ms polling rate, if network connection is stabl
 - Changing of block parameter while running the binding may kill your LOGO!, so that program flashing via LOGO! SoftComort
   will be required. Furthermore programs within LOGO! SoftComfort and LOGO! itself will differ, so that online simulation
   will not work anymore without program synchronisation.
+
 - Flashing the LOGO! while running the binding may crash the network interface of your LOGO!. Before flashing the LOGO!
   with LOGO! SoftComfort stop openHAB service. If network interface is crashed, no reader could be created for this
   device. See troubleshooting section below how to recover.
@@ -33,9 +34,9 @@ Bridge plclogo:device:<DeviceId> [ address="<ip>", family="<0BA7/0BA8>", localTS
 | address    | String  | Yes        |           | IP address of the LOGO! PLC.                                     |
 | family     | String  | Yes        |           | LOGO! family to communicate with. Can be `0BA7` or `0BA8` now.   |
 | localTSAP  | String  | Yes        |           | TSAP (as hex) is used by the local instance. Check configuration |
-|            |         |            |           | in LOGO!Soft Comfort. Common used value is `0x0300`.             |
+|            |         |            |           | in LOGO!Soft Comfort. Common used value is `0x3000`.             |
 | remoteTSAP | String  | Yes        |           | TSAP (as hex) of the remote LOGO! PLC, as configured by          |
-|            |         |            |           | LOGO!Soft Comfort. Common used value is `0x0200`.                |
+|            |         |            |           | LOGO!Soft Comfort. Common used value is `0x2000`.                |
 | refresh    | Integer | No         | 100ms     | Polling interval, in milliseconds. Is used for query the LOGO!.  |
 
 Be sure not to use the same values for localTSAP and remoteTSAP, if configure more than one LOGO!
@@ -236,6 +237,7 @@ channel="plclogo:datetime:<DeviceId>:<ThingId>:<date/time>"
 ```
 
 Additionally raw block data is provided via `value` channel
+
 ```
 channel="plclogo:datetime:<DeviceId>:<ThingId>:value"
 ```

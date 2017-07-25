@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2017 by the respective copyright holders.
+ * Copyright (c) 2010-2018 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -211,7 +211,7 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
 
         final Thing thing = getThing();
         Objects.requireNonNull(thing, "PLCCommonHandler: Thing may not be null.");
-        return ((ThingStatus.ONLINE == thing.getStatus()) && (ThingStatus.ONLINE == bridge.getStatus()));
+        return ((ThingStatus.ONLINE == bridge.getStatus()) && (ThingStatus.ONLINE == thing.getStatus()));
     }
 
     protected @Nullable State getOldValue(final @NonNull String name) {

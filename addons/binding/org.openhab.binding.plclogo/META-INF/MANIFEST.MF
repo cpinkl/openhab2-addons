@@ -23,5 +23,7 @@ Import-Package: org.apache.commons.net.util,
  org.eclipse.smarthome.core.thing.type,
  org.eclipse.smarthome.core.types,
  org.eclipse.smarthome.model.script.actions,
+ org.openhab.binding.plclogo,
+ org.openhab.binding.plclogo.handler,
  org.slf4j
 Service-Component: OSGI-INF/*.xml

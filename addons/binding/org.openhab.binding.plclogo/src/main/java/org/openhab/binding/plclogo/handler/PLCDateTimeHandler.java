@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2017 by the respective copyright holders.
+ * Copyright (c) 2010-2018 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -31,8 +31,8 @@ import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
-import org.openhab.binding.plclogo.config.PLCDateTimeConfiguration;
 import org.openhab.binding.plclogo.internal.PLCLogoClient;
+import org.openhab.binding.plclogo.internal.config.PLCDateTimeConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,11 +67,8 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
             return;
         }
 
-        final String channelId = channelUID.getId();
-        Objects.requireNonNull(channelId, "PLCDateTimeHandler: Invalid channel id found.");
-
         final PLCLogoClient client = getLogoClient();
-        final Channel channel = thing.getChannel(channelId);
+        final Channel channel = thing.getChannel(channelUID.getId());
         if (!isValid(config.getBlockName()) || (channel == null)) {
             logger.warn("Can not update channel {}: {}.", channelUID, client);
             return;
@@ -92,10 +89,10 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
                 final String type = channel.getAcceptedItemType();
                 if ((type != null) && type.equalsIgnoreCase(DATE_TIME_ITEM)) {
                     final ZonedDateTime datetime = ((DateTimeType) command).getZonedDateTime();
-                    if (channelId.equalsIgnoreCase("Time")) {
+                    if (channelUID.getId().equalsIgnoreCase("Time")) {
                         buffer[0] = S7.ByteToBCD(datetime.getHour());
                         buffer[1] = S7.ByteToBCD(datetime.getMinute());
-                    } else if (channelId.equalsIgnoreCase("Date")) {
+                    } else if (channelUID.getId().equalsIgnoreCase("Date")) {
                         buffer[0] = S7.ByteToBCD(datetime.getMonthValue());
                         buffer[1] = S7.ByteToBCD(datetime.getDayOfMonth());
                     }

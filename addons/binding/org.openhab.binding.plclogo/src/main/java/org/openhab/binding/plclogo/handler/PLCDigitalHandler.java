@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2017 by the respective copyright holders.
+ * Copyright (c) 2010-2018 by the respective copyright holders.
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -32,8 +32,8 @@ import org.eclipse.smarthome.core.thing.type.ChannelTypeUID;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
-import org.openhab.binding.plclogo.config.PLCDigitalConfiguration;
 import org.openhab.binding.plclogo.internal.PLCLogoClient;
+import org.openhab.binding.plclogo.internal.config.PLCDigitalConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +178,7 @@ public class PLCDigitalHandler extends PLCCommonHandler {
     @Override
     protected void updateState(ChannelUID channelUID, State state) {
         super.updateState(channelUID, state);
-        DecimalType value = (DecimalType) state.as(DecimalType.class);
+        DecimalType value = state.as(DecimalType.class);
         if (state instanceof OpenClosedType) {
             final OpenClosedType type = (OpenClosedType) state;
             value = new DecimalType(type == OpenClosedType.CLOSED ? 1 : 0);
