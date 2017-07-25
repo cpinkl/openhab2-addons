@@ -9,8 +9,8 @@
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="receiver" />
 		</supported-bridge-type-refs>
-		<label>Thermometer</label>
-		<description>Hideki/Cresta thermometer</description>
+		<label>Hideki thermometer</label>
+		<description>Hideki/Cresta/TFA wireless thermometer</description>
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>

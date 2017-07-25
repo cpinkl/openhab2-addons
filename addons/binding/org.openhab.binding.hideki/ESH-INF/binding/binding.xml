@@ -5,7 +5,7 @@
 				 xsi:schemaLocation="http://eclipse.org/smarthome/schemas/binding/v1.0.0 http://eclipse.org/smarthome/schemas/binding-1.0.0.xsd">
 
 	<name>Hideki Binding</name>
-	<description>This binding provides support for Hideki/Cresta weather stations.</description>
+	<description>This binding provides support for Hideki/Cresta/TFA weather sensors.</description>
 	<author>Alexander Falkenstern</author>
 
 </binding:binding>

@@ -9,8 +9,8 @@
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="receiver" />
 		</supported-bridge-type-refs>
-		<label>Anemometer</label>
-		<description>Hideki/Cresta anemometer</description>
+		<label>Hideki anemometer</label>
+		<description>Hideki/Cresta/TFA wireless anemometer</description>
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>

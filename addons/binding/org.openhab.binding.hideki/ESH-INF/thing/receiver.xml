@@ -3,10 +3,10 @@
 	xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
 	xsi:schemaLocation="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0 http://eclipse.org/smarthome/schemas/thing-description-1.0.0.xsd">
 
-	<!--Hideki/Cresta 433Mhz receiver -->
+	<!--Hideki/Cresta/TFA 433Mhz receiver -->
 	<bridge-type id="receiver">
-		<label>Receiver</label>
-		<description>Hideki/Cresta 433Mhz receiver</description>
+		<label>Hideki receiver</label>
+		<description>433Mhz receiver</description>
 		<config-description-ref uri="thing-type:hideki:bridge" />
 	</bridge-type>
 

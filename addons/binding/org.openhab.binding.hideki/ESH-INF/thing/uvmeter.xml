@@ -9,8 +9,8 @@
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="receiver" />
 		</supported-bridge-type-refs>
-		<label>UV-meter</label>
-		<description>Hideki/Cresta UV-meter</description>
+		<label>Hideki UV-meter</label>
+		<description>Hideki/Cresta/TFA wireless UV-meter</description>
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>

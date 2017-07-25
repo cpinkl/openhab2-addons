@@ -9,8 +9,8 @@
 		<supported-bridge-type-refs>
 			<bridge-type-ref id="receiver" />
 		</supported-bridge-type-refs>
-		<label>Pluviometer</label>
-		<description>Hideki/Cresta pluviometer</description>
+		<label>Hideki pluviometer</label>
+		<description>Hideki/Cresta/TFA wireless pluviometer</description>
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>
