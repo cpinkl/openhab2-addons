@@ -13,6 +13,7 @@ import static org.openhab.binding.hideki.HidekiBindingConstants.*;
 import java.util.Calendar;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Channel;
@@ -45,7 +46,7 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
      * {@inheritDoc}
      */
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
+    public void handleCommand(@NonNull ChannelUID channelUID, Command command) {
         logger.debug("Handle command {} on channel {}", command, channelUID);
 
         if (command instanceof RefreshType && (data != null)) {
@@ -73,8 +74,7 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
         Objects.requireNonNull(thing, "HidekiBaseHandler: Thing may not be null.");
 
         logger.debug("Initialize Hideki base handler.");
-
-        super.initialize();
+        updateStatus(ThingStatus.ONLINE);
     }
 
     /**
@@ -109,16 +109,24 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
 
             if (data.length == getDecodedLength()) {
                 final Channel uChannel = thing.getChannel(RECEIVED_UPDATE);
-                updateState(uChannel.getUID(), new DateTimeType(Calendar.getInstance()));
+                if (uChannel != null) {
+                    updateState(uChannel.getUID(), new DateTimeType(Calendar.getInstance()));
+                }
 
                 final Channel iChannel = thing.getChannel(SENSOR_ID);
-                updateState(iChannel.getUID(), new DecimalType(getSensorId()));
+                if (iChannel != null) {
+                    updateState(iChannel.getUID(), new DecimalType(getSensorId()));
+                }
 
                 final Channel cChannel = thing.getChannel(SENSOR_CHANNEL);
-                updateState(cChannel.getUID(), new DecimalType(getChannel()));
+                if (cChannel != null) {
+                    updateState(cChannel.getUID(), new DecimalType(getChannel()));
+                }
 
                 final Channel nChannel = thing.getChannel(MESSAGE_NUMBER);
-                updateState(nChannel.getUID(), new DecimalType(getMessageNumber()));
+                if (nChannel != null) {
+                    updateState(nChannel.getUID(), new DecimalType(getMessageNumber()));
+                }
             } else {
                 logger.error("Got wrong sensor data length {}.", data.length);
             }

@@ -12,6 +12,7 @@ Bundle-NativeCode: lib/armv7l/libhideki.so;osname=linux;processor=armv7l,
 Import-Package: 
  org.openhab.binding.hideki,
  org.openhab.binding.hideki.handler,
+ org.eclipse.jdt.annotation;resolution:=optional,
  org.eclipse.smarthome.config.core,
  org.eclipse.smarthome.core.library.types,
  org.eclipse.smarthome.core.thing,

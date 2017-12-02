@@ -13,6 +13,7 @@ import static org.openhab.binding.hideki.HidekiBindingConstants.*;
 import java.util.Arrays;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -44,7 +45,7 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
      * {@inheritDoc}
      */
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
+    public void handleCommand(@NonNull ChannelUID channelUID, Command command) {
         logger.debug("Handle command {} on channel {}", command, channelUID);
 
         if (command instanceof RefreshType && (data != null)) {
@@ -103,8 +104,7 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
             super.setData(data); // Decode common parts first
             if (data.length == getDecodedLength()) {
                 if (logger.isTraceEnabled()) {
-                    final String raw = Arrays.toString(data);
-                    logger.trace("Got new anemometer data: {}.", raw);
+                    logger.trace("Got new anemometer data: {}.", Arrays.toString(data));
                 }
 
                 synchronized (this) {
@@ -115,19 +115,29 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
                 }
 
                 final Channel tChannel = thing.getChannel(TEMPERATURE);
-                updateState(tChannel.getUID(), new DecimalType(getTemperature()));
+                if (tChannel != null) {
+                    updateState(tChannel.getUID(), new DecimalType(getTemperature()));
+                }
 
                 final Channel cChannel = thing.getChannel(CHILL);
-                updateState(cChannel.getUID(), new DecimalType(getWindChill()));
+                if (cChannel != null) {
+                    updateState(cChannel.getUID(), new DecimalType(getWindChill()));
+                }
 
                 final Channel sChannel = thing.getChannel(SPEED);
-                updateState(sChannel.getUID(), new DecimalType(getWindSpeed()));
+                if (sChannel != null) {
+                    updateState(sChannel.getUID(), new DecimalType(getWindSpeed()));
+                }
 
                 final Channel gChannel = thing.getChannel(GUST);
-                updateState(gChannel.getUID(), new DecimalType(getWindGust()));
+                if (gChannel != null) {
+                    updateState(gChannel.getUID(), new DecimalType(getWindGust()));
+                }
 
                 final Channel dChannel = thing.getChannel(DIRECTION);
-                updateState(dChannel.getUID(), new DecimalType(getWindDirection()));
+                if (dChannel != null) {
+                    updateState(dChannel.getUID(), new DecimalType(getWindDirection()));
+                }
             } else {
                 logger.error("Got wrong anemometer data length {}.", data.length);
             }

@@ -13,6 +13,7 @@ import static org.openhab.binding.hideki.HidekiBindingConstants.*;
 import java.util.Arrays;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -44,7 +45,7 @@ public class HidekiUVmeterHandler extends HidekiBaseHandler {
      * {@inheritDoc}
      */
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
+    public void handleCommand(@NonNull ChannelUID channelUID, Command command) {
         logger.debug("Handle command {} on channel {}", command, channelUID);
 
         if (command instanceof RefreshType && (data != null)) {
@@ -89,7 +90,7 @@ public class HidekiUVmeterHandler extends HidekiBaseHandler {
      */
     @Override
     public void setData(final int[] data) {
-        final Thing thing = getThing();
+        final @NonNull Thing thing = getThing();
         Objects.requireNonNull(thing, "HidekiUVmeterHandler: Thing may not be null.");
         if (ThingStatus.ONLINE != thing.getStatus()) {
             return;
@@ -99,8 +100,7 @@ public class HidekiUVmeterHandler extends HidekiBaseHandler {
             super.setData(data); // Decode common parts first
             if (data.length == getDecodedLength()) {
                 if (logger.isTraceEnabled()) {
-                    final String raw = Arrays.toString(data);
-                    logger.trace("Got new UV-meter data: {}.", raw);
+                    logger.trace("Got new UV-meter data: {}.", Arrays.toString(data));
                 }
 
                 synchronized (this) {
@@ -111,13 +111,19 @@ public class HidekiUVmeterHandler extends HidekiBaseHandler {
                 }
 
                 final Channel tChannel = thing.getChannel(TEMPERATURE);
-                updateState(tChannel.getUID(), new DecimalType(getTemperature()));
+                if (tChannel != null) {
+                    updateState(tChannel.getUID(), new DecimalType(getTemperature()));
+                }
 
                 final Channel mChannel = thing.getChannel(MED);
-                updateState(mChannel.getUID(), new DecimalType(getMED()));
+                if (mChannel != null) {
+                    updateState(mChannel.getUID(), new DecimalType(getMED()));
+                }
 
                 final Channel uChannel = thing.getChannel(UV_INDEX);
-                updateState(uChannel.getUID(), new DecimalType(getUVIndex()));
+                if (uChannel != null) {
+                    updateState(uChannel.getUID(), new DecimalType(getUVIndex()));
+                }
             } else {
                 logger.error("Got wrong UV-meter data length {}.", data.length);
             }

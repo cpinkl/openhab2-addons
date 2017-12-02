@@ -13,6 +13,7 @@ import static org.openhab.binding.hideki.HidekiBindingConstants.RAIN_LEVEL;
 import java.util.Arrays;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
@@ -44,7 +45,7 @@ public class HidekiPluviometerHandler extends HidekiBaseHandler {
      * {@inheritDoc}
      */
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
+    public void handleCommand(@NonNull ChannelUID channelUID, Command command) {
         logger.debug("Handle command {} on channel {}", command, channelUID);
 
         if (command instanceof RefreshType && (data != null)) {
@@ -95,8 +96,7 @@ public class HidekiPluviometerHandler extends HidekiBaseHandler {
             super.setData(data); // Decode common parts first
             if (data.length == getDecodedLength()) {
                 if (logger.isTraceEnabled()) {
-                    final String raw = Arrays.toString(data);
-                    logger.trace("Got new pluviometer data: {}.", raw);
+                    logger.trace("Got new pluviometer data: {}.", Arrays.toString(data));
                 }
 
                 synchronized (this) {
@@ -107,7 +107,9 @@ public class HidekiPluviometerHandler extends HidekiBaseHandler {
                 }
 
                 final Channel rChannel = thing.getChannel(RAIN_LEVEL);
-                updateState(rChannel.getUID(), new DecimalType(getRainLevel()));
+                if (rChannel != null) {
+                    updateState(rChannel.getUID(), new DecimalType(getRainLevel()));
+                }
             } else {
                 logger.error("Got wrong pluviometer data length {}.", data.length);
             }

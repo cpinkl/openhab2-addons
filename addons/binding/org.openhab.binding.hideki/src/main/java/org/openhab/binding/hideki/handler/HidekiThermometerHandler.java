@@ -13,6 +13,7 @@ import static org.openhab.binding.hideki.HidekiBindingConstants.*;
 import java.util.Arrays;
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.Channel;
@@ -45,7 +46,7 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
      * {@inheritDoc}
      */
     @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
+    public void handleCommand(@NonNull ChannelUID channelUID, Command command) {
         logger.debug("Handle command {} on channel {}", command, channelUID);
 
         if (command instanceof RefreshType && (data != null)) {
@@ -100,8 +101,7 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
             super.setData(data); // Decode common parts first
             if (data.length == getDecodedLength()) {
                 if (logger.isTraceEnabled()) {
-                    final String raw = Arrays.toString(data);
-                    logger.trace("Got new thermometer data: {}.", raw);
+                    logger.trace("Got new thermometer data: {}.", Arrays.toString(data));
                 }
 
                 synchronized (this) {
@@ -112,13 +112,19 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
                 }
 
                 final Channel tChannel = thing.getChannel(TEMPERATURE);
-                updateState(tChannel.getUID(), new DecimalType(getTemperature()));
+                if (tChannel != null) {
+                    updateState(tChannel.getUID(), new DecimalType(getTemperature()));
+                }
 
                 final Channel hChannel = thing.getChannel(HUMIDITY);
-                updateState(hChannel.getUID(), new DecimalType(getHumidity()));
+                if (hChannel != null) {
+                    updateState(hChannel.getUID(), new DecimalType(getHumidity()));
+                }
 
                 final Channel bChannel = thing.getChannel(BATTERY);
-                updateState(bChannel.getUID(), getBatteryState() ? OnOffType.ON : OnOffType.OFF);
+                if (bChannel != null) {
+                    updateState(bChannel.getUID(), getBatteryState() ? OnOffType.ON : OnOffType.OFF);
+                }
             } else {
                 logger.error("Got wrong thermometer data length {}.", data.length);
             }

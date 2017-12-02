@@ -107,7 +107,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                             logger.info("Creating new reader job on pin {} with interval {} sec.", pin, interval);
                             readerJob = scheduler.scheduleWithFixedDelay(dataReader, 1, interval, TimeUnit.SECONDS);
                         }
-                        HidekiReceiverHandler.super.initialize();
+                        updateStatus(ThingStatus.ONLINE);
                     } else {
                         final String message = "Can not start decoder on pin: " + pin.toString() + ".";
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, message);
