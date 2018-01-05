@@ -8,7 +8,7 @@
  */
 package org.openhab.binding.plclogo.handler;
 
-import static org.openhab.binding.plclogo.PLCLogoBindingConstants.LOGO_MEMORY_BLOCK;
+import static org.openhab.binding.plclogo.PLCLogoBindingConstants.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -77,6 +77,7 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
         synchronized (oldValues) {
             oldValues.clear();
         }
+
         client = null;
         family = null;
     }
@@ -168,6 +169,7 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
         } else {
             logger.warn("Wrong configurated LOGO! block {} found.", name);
         }
+
         return address;
     }
 
@@ -213,19 +215,14 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
     }
 
     protected @Nullable State getOldValue(final @NonNull String name) {
-        if (isValid(name)) {
-            synchronized (oldValues) {
-                return oldValues.get(name);
-            }
+        synchronized (oldValues) {
+            return oldValues.get(name);
         }
-        return null;
     }
 
     protected void setOldValue(final @NonNull String name, final @Nullable State value) {
-        if (isValid(name)) {
-            synchronized (oldValues) {
-                oldValues.put(name, value);
-            }
+        synchronized (oldValues) {
+            oldValues.put(name, value);
         }
     }
 
@@ -235,6 +232,7 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
      * @return Configured LOGO! client
      */
     protected @NonNull PLCLogoClient getLogoClient() {
+        Objects.requireNonNull(client, "PLCCommonHandler: Client may not be null.");
         return client;
     }
 
@@ -246,6 +244,7 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
      * @return Configured LOGO! family
      */
     protected @NonNull String getLogoFamily() {
+        Objects.requireNonNull(family, "PLCCommonHandler: Family may not be null.");
         return family;
     }
 
@@ -270,6 +269,10 @@ public abstract class PLCCommonHandler extends BaseThingHandler {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, message);
             logger.error("Can not initialize thing {} for LOGO! {}.", thing.getUID(), bridge.getUID());
         }
+    }
+
+    protected static @NonNull String getBlockFromChannel(@NonNull Channel channel) {
+        return channel.getProperties().get(BLOCK_PROPERTY);
     }
 
 }

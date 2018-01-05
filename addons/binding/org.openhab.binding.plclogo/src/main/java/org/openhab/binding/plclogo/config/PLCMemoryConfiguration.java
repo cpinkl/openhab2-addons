@@ -8,6 +8,8 @@
  */
 package org.openhab.binding.plclogo.config;
 
+import static org.openhab.binding.plclogo.PLCLogoBindingConstants.*;
+
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
@@ -64,12 +66,23 @@ public class PLCMemoryConfiguration extends PLCCommonConfiguration {
     @Override
     public @NonNull String getChannelType() {
         final String kind = getBlockKind();
-        return kind.equalsIgnoreCase("VB") && block.contains(".") ? "Switch" : "Number";
+        return kind.equalsIgnoreCase("VB") && block.contains(".") ? DIGITAL_OUTPUT_ITEM : ANALOG_ITEM;
     }
 
     @Override
     public @NonNull String getBlockKind() {
-        return block.substring(0, 2);
+        return getBlockKind(block);
     }
 
+    protected static @NonNull String getBlockKind(final @NonNull String name) {
+        String kind = "Unknown";
+        if (Character.isDigit(name.charAt(1))) {
+            kind = name.substring(0, 1);
+        } else if (Character.isDigit(name.charAt(2))) {
+            kind = name.substring(0, 2);
+        } else if (Character.isDigit(name.charAt(3))) {
+            kind = name.substring(0, 3);
+        }
+        return kind;
+    }
 }

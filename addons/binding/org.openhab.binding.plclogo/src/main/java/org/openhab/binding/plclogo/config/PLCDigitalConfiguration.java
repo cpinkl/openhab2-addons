@@ -8,6 +8,8 @@
  */
 package org.openhab.binding.plclogo.config;
 
+import static org.openhab.binding.plclogo.PLCLogoBindingConstants.*;
+
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
@@ -41,7 +43,7 @@ public class PLCDigitalConfiguration extends PLCCommonConfiguration {
 
     @Override
     public @NonNull String getChannelType() {
-        return (kind.equalsIgnoreCase("I") || kind.equalsIgnoreCase("NI")) ? "Contact" : "Switch";
+        return (kind.equalsIgnoreCase("I") || kind.equalsIgnoreCase("NI")) ? DIGITAL_INPUT_ITEM : DIGITAL_OUTPUT_ITEM;
     }
 
 }

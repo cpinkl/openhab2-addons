@@ -8,6 +8,8 @@
  */
 package org.openhab.binding.plclogo.config;
 
+import static org.openhab.binding.plclogo.PLCLogoBindingConstants.ANALOG_ITEM;
+
 import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
@@ -43,7 +45,7 @@ public class PLCAnalogConfiguration extends PLCDigitalConfiguration {
 
     @Override
     public @NonNull String getChannelType() {
-        return "Number";
+        return ANALOG_ITEM;
     }
 
 }

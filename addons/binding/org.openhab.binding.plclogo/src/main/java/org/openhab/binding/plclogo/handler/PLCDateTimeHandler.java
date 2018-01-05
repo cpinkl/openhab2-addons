@@ -36,6 +36,8 @@ import org.openhab.binding.plclogo.internal.PLCLogoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
+
 import Moka7.S7;
 import Moka7.S7Client;
 
@@ -51,9 +53,6 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
 
     private final Logger logger = LoggerFactory.getLogger(PLCDateTimeHandler.class);
     private PLCDateTimeConfiguration config = getConfigAs(PLCDateTimeConfiguration.class);
-
-    private static final String DATE_TIME_ITEM_TYPE = "DateTime";
-    private static final String RAW_VALUE_ITEM_TYPE = "Number";
 
     /**
      * Constructor.
@@ -91,7 +90,7 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
             } else if (command instanceof DateTimeType) {
                 final byte[] buffer = new byte[2];
                 final String type = channel.getAcceptedItemType();
-                if (type.equalsIgnoreCase(DATE_TIME_ITEM_TYPE)) {
+                if ((type != null) && type.equalsIgnoreCase(DATE_TIME_ITEM)) {
                     final ZonedDateTime datetime = ((DateTimeType) command).getZonedDateTime();
                     if (channelId.equalsIgnoreCase("Time")) {
                         buffer[0] = S7.ByteToBCD(datetime.getHour());
@@ -166,9 +165,9 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
     @Override
     protected boolean isValid(final @NonNull String name) {
         if (3 <= name.length() && (name.length() <= 5)) {
-            final String kind = config.getBlockKind();
-            if (Character.isDigit(name.charAt(2)) && kind.equalsIgnoreCase(name.substring(0, 2))) {
-                return kind.equalsIgnoreCase("VW");
+            final String kind = getBlockKind();
+            if (Character.isDigit(name.charAt(2))) {
+                return name.startsWith(kind) && kind.equalsIgnoreCase("VW");
             }
         }
         return false;
@@ -210,12 +209,14 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
             cBuilder.withType(new ChannelTypeUID(BINDING_ID, type.toLowerCase()));
             cBuilder.withLabel(name);
             cBuilder.withDescription(text + " block parameter " + name);
+            cBuilder.withProperties(ImmutableMap.of(BLOCK_PROPERTY, name));
             tBuilder.withChannel(cBuilder.build());
 
-            cBuilder = ChannelBuilder.create(new ChannelUID(thing.getUID(), "value"), RAW_VALUE_ITEM_TYPE);
-            cBuilder.withType(new ChannelTypeUID(BINDING_ID, RAW_VALUE_ITEM_TYPE.toLowerCase()));
+            cBuilder = ChannelBuilder.create(new ChannelUID(thing.getUID(), VALUE_CHANNEL), ANALOG_ITEM);
+            cBuilder.withType(new ChannelTypeUID(BINDING_ID, ANALOG_ITEM.toLowerCase()));
             cBuilder.withLabel(name);
             cBuilder.withDescription(text + " block parameter " + name);
+            cBuilder.withProperties(ImmutableMap.of(BLOCK_PROPERTY, name));
             tBuilder.withChannel(cBuilder.build());
             setOldValue(name, null);
 
@@ -229,7 +230,7 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
         Objects.requireNonNull(channelUID, "PLCDateTimeHandler: Invalid channel uid found.");
 
         final String type = channel.getAcceptedItemType();
-        if (type.equalsIgnoreCase(DATE_TIME_ITEM_TYPE)) {
+        if ((type != null) && type.equalsIgnoreCase(DATE_TIME_ITEM)) {
             final String channelId = channelUID.getId();
             Objects.requireNonNull(channelId, "PLCDateTimeHandler: Invalid channel id found.");
 
@@ -254,7 +255,7 @@ public class PLCDateTimeHandler extends PLCCommonHandler {
             }
             updateState(channelUID, new DateTimeType(datetime));
             logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, datetime);
-        } else if (type.equalsIgnoreCase(RAW_VALUE_ITEM_TYPE)) {
+        } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM)) {
             updateState(channelUID, new DecimalType(value));
             logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
         } else {

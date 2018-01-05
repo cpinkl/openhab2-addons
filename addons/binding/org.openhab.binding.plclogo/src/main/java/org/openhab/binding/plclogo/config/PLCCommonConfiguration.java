@@ -41,6 +41,8 @@ abstract class PLCCommonConfiguration {
         this.force = force;
     }
 
+    public abstract @NonNull String getChannelType();
+
     /**
      * Get configured Siemens LOGO! blocks kind.
      * Can be I, Q, M, NI or NQ for digital blocks, AI, AM,
@@ -49,7 +51,5 @@ abstract class PLCCommonConfiguration {
      * @return Configured Siemens LOGO! blocks kind
      */
     public abstract @NonNull String getBlockKind();
-
-    public abstract @NonNull String getChannelType();
 
 }

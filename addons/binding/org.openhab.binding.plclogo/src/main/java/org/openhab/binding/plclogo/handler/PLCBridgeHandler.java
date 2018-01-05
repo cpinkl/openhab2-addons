@@ -53,7 +53,6 @@ public class PLCBridgeHandler extends BaseBridgeHandler {
     public static final Set<ThingTypeUID> SUPPORTED_THING_TYPES = Collections.singleton(THING_TYPE_DEVICE);
 
     private final Logger logger = LoggerFactory.getLogger(PLCBridgeHandler.class);
-    private static final @NonNull String RTC_CHANNEL_ID = "rtc";
 
     // S7 client this bridge belongs to
     private volatile PLCLogoClient client;
@@ -65,21 +64,18 @@ public class PLCBridgeHandler extends BaseBridgeHandler {
     private final Runnable rtcReader = new Runnable() {
         // Buffer for diagnostic data
         private final byte[] data = { 0, 0, 0, 0, 0, 0, 0 };
-        private final Channel channel = getThing().getChannel(RTC_CHANNEL_ID);
+        private final Channel channel = getThing().getChannel(RTC_CHANNEL);
 
         @Override
         public void run() {
             try {
-                if (client != null) {
+                if ((client != null) && (channel != null)) {
                     int result = client.readDBArea(1, LOGO_STATE.intValue(), data.length, S7Client.S7WLByte, data);
                     if (result == 0) {
-                        final ChannelUID channelUID = channel.getUID();
-                        if (channelUID != null) {
-                            synchronized (rtc) {
-                                rtc = getRtcAt(data, 1);
-                            }
-                            updateState(channelUID, new DateTimeType(rtc));
+                        synchronized (rtc) {
+                            rtc = getRtcAt(data, 1);
                         }
+                        updateState(channel.getUID(), new DateTimeType(rtc));
 
                         if (logger.isTraceEnabled()) {
                             final String raw = Arrays.toString(data);
@@ -163,8 +159,7 @@ public class PLCBridgeHandler extends BaseBridgeHandler {
         }
 
         final String channelId = channelUID.getId();
-        final PLCLogoClient client = getLogoClient();
-        if (!RTC_CHANNEL_ID.equals(channelId) || (client == null)) {
+        if (!RTC_CHANNEL.equals(channelId) || (client == null)) {
             logger.warn("Can not update channel {}: {}.", channelUID, client);
             return;
         }

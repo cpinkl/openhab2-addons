@@ -35,6 +35,8 @@ import org.openhab.binding.plclogo.internal.PLCLogoClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ImmutableMap;
+
 import Moka7.S7;
 import Moka7.S7Client;
 
@@ -51,9 +53,6 @@ public class PLCMemoryHandler extends PLCCommonHandler {
     private final Logger logger = LoggerFactory.getLogger(PLCMemoryHandler.class);
     private PLCMemoryConfiguration config = getConfigAs(PLCMemoryConfiguration.class);
 
-    private static final String ANALOG_ITEM_TYPE = "Number";
-    private static final String DIGITAL_ITEM_TYPE = "Switch";
-
     /**
      * Constructor.
      */
@@ -67,37 +66,33 @@ public class PLCMemoryHandler extends PLCCommonHandler {
             return;
         }
 
-        final String channelId = channelUID.getId();
-        Objects.requireNonNull(channelId, "PLCMemoryHandler: Invalid channel id found.");
+        final Channel channel = thing.getChannel(channelUID.getId());
+        Objects.requireNonNull(channel, "PLCMemoryHandler: Invalid channel found.");
 
-        final PLCLogoClient client = getLogoClient();
-        final Channel channel = thing.getChannel(channelId);
-        if (!isValid(config.getBlockName()) || (channel == null)) {
-            logger.warn("Can not update channel {}: {}.", channelUID, client);
-            return;
-        }
+        final @NonNull PLCLogoClient client = getLogoClient();
+        final @NonNull String name = getBlockFromChannel(channel);
 
-        final int address = getAddress(config.getBlockName());
+        final int address = getAddress(name);
         if (address != INVALID) {
-            final String kind = config.getBlockKind();
+            final String kind = getBlockKind();
             final String type = channel.getAcceptedItemType();
             if (command instanceof RefreshType) {
                 final byte[] buffer = new byte[getBufferLength()];
                 int result = client.readDBArea(1, 0, buffer.length, S7Client.S7WLByte, buffer);
                 if (result == 0) {
-                    if (type.equalsIgnoreCase(DIGITAL_ITEM_TYPE) && kind.equalsIgnoreCase("VB")) {
-                        boolean value = S7.GetBitAt(buffer, address, getBit(config.getBlockName()));
+                    if ((type != null) && type.equalsIgnoreCase(DIGITAL_OUTPUT_ITEM) && kind.equalsIgnoreCase("VB")) {
+                        boolean value = S7.GetBitAt(buffer, address, getBit(name));
                         updateState(channelUID, value ? OnOffType.ON : OnOffType.OFF);
                         logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
-                    } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VB")) {
+                    } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VB")) {
                         int value = buffer[address];
                         updateState(channelUID, new DecimalType(value));
                         logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
-                    } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VW")) {
+                    } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VW")) {
                         int value = S7.GetShortAt(buffer, address);
                         updateState(channelUID, new DecimalType(value));
                         logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
-                    } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VD")) {
+                    } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VD")) {
                         int value = S7.GetDIntAt(buffer, address);
                         updateState(channelUID, new DecimalType(value));
                         logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
@@ -110,11 +105,11 @@ public class PLCMemoryHandler extends PLCCommonHandler {
             } else if (command instanceof DecimalType) {
                 final int length = kind.equalsIgnoreCase("VB") ? 1 : 2;
                 final byte[] buffer = new byte[kind.equalsIgnoreCase("VD") ? 4 : length];
-                if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VB")) {
+                if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VB")) {
                     buffer[0] = ((DecimalType) command).byteValue();
-                } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VW")) {
+                } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VW")) {
                     S7.SetShortAt(buffer, 0, ((DecimalType) command).intValue());
-                } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VD")) {
+                } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VD")) {
                     S7.SetDIntAt(buffer, 0, ((DecimalType) command).intValue());
                 } else {
                     logger.warn("Channel {} will not accept {} items.", channelUID, type);
@@ -125,13 +120,12 @@ public class PLCMemoryHandler extends PLCCommonHandler {
                 }
             } else if (command instanceof OnOffType) {
                 final byte[] buffer = new byte[1];
-                if (type.equalsIgnoreCase(DIGITAL_ITEM_TYPE) && kind.equalsIgnoreCase("VB")) {
+                if ((type != null) && type.equalsIgnoreCase(DIGITAL_OUTPUT_ITEM) && kind.equalsIgnoreCase("VB")) {
                     S7.SetBitAt(buffer, 0, 0, ((OnOffType) command) == OnOffType.ON);
                 } else {
                     logger.warn("Channel {} will not accept {} items.", channelUID, type);
                 }
-                final int bit = getBit(config.getBlockName());
-                int result = client.writeDBArea(1, 8 * address + bit, buffer.length, S7Client.S7WLBit, buffer);
+                int result = client.writeDBArea(1, 8 * address + getBit(name), buffer.length, S7Client.S7WLBit, buffer);
                 if (result != 0) {
                     logger.warn("Can not write data to LOGO!: {}.", S7Client.ErrorText(result));
                 }
@@ -158,58 +152,64 @@ public class PLCMemoryHandler extends PLCCommonHandler {
             return;
         }
 
-        final Channel channel = channels.get(0);
-        final ChannelUID channelUID = channel.getUID();
-        Objects.requireNonNull(channelUID, "PLCMemoryHandler: Invalid channel uid found.");
+        for (final Channel channel : channels) {
+            final @NonNull ChannelUID channelUID = channel.getUID();
+            final @NonNull String name = getBlockFromChannel(channel);
 
-        final int address = getAddress(config.getBlockName());
-        if (address != INVALID) {
-            final String kind = config.getBlockKind();
-            final String type = channel.getAcceptedItemType();
+            final int address = getAddress(name);
+            if (address != INVALID) {
+                final String kind = getBlockKind();
+                final String type = channel.getAcceptedItemType();
+                final Boolean force = config.isUpdateForced();
 
-            if (type.equalsIgnoreCase(DIGITAL_ITEM_TYPE) && kind.equalsIgnoreCase("VB")) {
-                final OnOffType state = (OnOffType) getOldValue(config.getBlockName());
-                boolean value = S7.GetBitAt(data, address, getBit(config.getBlockName()));
-                if ((state == null) || ((value ? OnOffType.ON : OnOffType.OFF) != state) || config.isUpdateForced()) {
-                    updateState(channelUID, value ? OnOffType.ON : OnOffType.OFF);
-                    logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
-                }
-            } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VB")) {
-                final Integer threshold = config.getThreshold();
-                final DecimalType state = (DecimalType) getOldValue(config.getBlockName());
-                int value = data[address];
-                if ((state == null) || (Math.abs(value - state.intValue()) > threshold) || config.isUpdateForced()) {
-                    updateState(channelUID, new DecimalType(value));
-                    logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
-                }
-            } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VW")) {
-                final Integer threshold = config.getThreshold();
-                final DecimalType state = (DecimalType) getOldValue(config.getBlockName());
-                int value = S7.GetShortAt(data, address);
-                if ((state == null) || (Math.abs(value - state.intValue()) > threshold) || config.isUpdateForced()) {
-                    updateState(channelUID, new DecimalType(value));
-                    logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
-                }
-            } else if (type.equalsIgnoreCase(ANALOG_ITEM_TYPE) && kind.equalsIgnoreCase("VD")) {
-                final Integer threshold = config.getThreshold();
-                final DecimalType state = (DecimalType) getOldValue(config.getBlockName());
-                int value = S7.GetDIntAt(data, address);
-                if ((state == null) || (Math.abs(value - state.intValue()) > threshold) || config.isUpdateForced()) {
-                    updateState(channelUID, new DecimalType(value));
-                    logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
+                if ((type != null) && type.equalsIgnoreCase(DIGITAL_OUTPUT_ITEM) && kind.equalsIgnoreCase("VB")) {
+                    final OnOffType state = (OnOffType) getOldValue(name);
+                    final OnOffType value = S7.GetBitAt(data, address, getBit(name)) ? OnOffType.ON : OnOffType.OFF;
+                    if ((state == null) || (value != state) || force) {
+                        updateState(channelUID, value);
+                        logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
+                    }
+                } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VB")) {
+                    final Integer threshold = config.getThreshold();
+                    final DecimalType state = (DecimalType) getOldValue(name);
+                    int value = data[address];
+                    if ((state == null) || (Math.abs(value - state.intValue()) > threshold) || force) {
+                        updateState(channelUID, new DecimalType(value));
+                        logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
+                    }
+                } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VW")) {
+                    final Integer threshold = config.getThreshold();
+                    final DecimalType state = (DecimalType) getOldValue(name);
+                    int value = S7.GetShortAt(data, address);
+                    if ((state == null) || (Math.abs(value - state.intValue()) > threshold) || force) {
+                        updateState(channelUID, new DecimalType(value));
+                        logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
+                    }
+                } else if ((type != null) && type.equalsIgnoreCase(ANALOG_ITEM) && kind.equalsIgnoreCase("VD")) {
+                    final Integer threshold = config.getThreshold();
+                    final DecimalType state = (DecimalType) getOldValue(name);
+                    int value = S7.GetDIntAt(data, address);
+                    if ((state == null) || (Math.abs(value - state.intValue()) > threshold) || force) {
+                        updateState(channelUID, new DecimalType(value));
+                        logger.debug("Channel {} accepting {} was set to {}.", channelUID, type, value);
+                    }
+                } else {
+                    logger.warn("Channel {} will not accept {} items.", channelUID, type);
                 }
             } else {
-                logger.warn("Channel {} will not accept {} items.", channelUID, type);
+                logger.warn("Invalid channel {} found.", channelUID);
             }
-        } else {
-            logger.warn("Invalid channel {} found.", channelUID);
         }
     }
 
     @Override
     protected void updateState(ChannelUID channelUID, State state) {
         super.updateState(channelUID, state);
-        setOldValue(config.getBlockName(), state);
+
+        final Channel channel = thing.getChannel(channelUID.getId());
+        Objects.requireNonNull(channel, "PLCMemoryHandler: Invalid channel found.");
+
+        setOldValue(getBlockFromChannel(channel), state);
     }
 
     @Override
@@ -223,9 +223,10 @@ public class PLCMemoryHandler extends PLCCommonHandler {
     @Override
     protected boolean isValid(final @NonNull String name) {
         if (3 <= name.length() && (name.length() <= 7)) {
-            final String kind = config.getBlockKind();
-            if (Character.isDigit(name.charAt(2)) && kind.equalsIgnoreCase(name.substring(0, 2))) {
-                return kind.equalsIgnoreCase("VB") || kind.equalsIgnoreCase("VW") || kind.equalsIgnoreCase("VD");
+            final String kind = getBlockKind();
+            if (Character.isDigit(name.charAt(2))) {
+                boolean valid = kind.equalsIgnoreCase("VB") || kind.equalsIgnoreCase("VW");
+                return name.startsWith(kind) && (valid || kind.equalsIgnoreCase("VD"));
             }
         }
         return false;
@@ -254,20 +255,21 @@ public class PLCMemoryHandler extends PLCCommonHandler {
 
         super.doInitialization();
         if (ThingStatus.OFFLINE != thing.getStatus()) {
-            final String kind = config.getBlockKind();
-            boolean isDigital = kind.equalsIgnoreCase("VB") && (getBit(config.getBlockName()) != INVALID);
+            final String kind = getBlockKind();
+            final String name = config.getBlockName();
+            boolean isDigital = kind.equalsIgnoreCase("VB") && (getBit(name) != INVALID);
             String text = isDigital ? "Digital" : "Analog";
 
             ThingBuilder tBuilder = editThing();
             tBuilder.withLabel(getBridge().getLabel() + ": " + text.toLowerCase() + " in/output");
 
-            final String name = config.getBlockName();
             final String type = config.getChannelType();
-            final ChannelUID uid = new ChannelUID(thing.getUID(), isDigital ? "state" : "value");
+            final ChannelUID uid = new ChannelUID(thing.getUID(), isDigital ? STATE_CHANNEL : VALUE_CHANNEL);
             ChannelBuilder cBuilder = ChannelBuilder.create(uid, type);
             cBuilder.withType(new ChannelTypeUID(BINDING_ID, type.toLowerCase()));
             cBuilder.withLabel(name);
             cBuilder.withDescription(text + " in/output block " + name);
+            cBuilder.withProperties(ImmutableMap.of(BLOCK_PROPERTY, name));
             tBuilder.withChannel(cBuilder.build());
             setOldValue(name, null);
 
@@ -287,7 +289,7 @@ public class PLCMemoryHandler extends PLCCommonHandler {
 
         logger.debug("Get bit of {} LOGO! for block {} .", getLogoFamily(), name);
 
-        if (isValid(name)) {
+        if (isValid(name) && (getAddress(name) != INVALID)) {
             final String[] parts = name.trim().split("\\.");
             if (parts.length > 1) {
                 bit = Integer.parseInt(parts[1]);
@@ -295,6 +297,7 @@ public class PLCMemoryHandler extends PLCCommonHandler {
         } else {
             logger.warn("Wrong configurated LOGO! block {} found.", name);
         }
+
         return bit;
     }
 

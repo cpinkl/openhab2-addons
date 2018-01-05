@@ -23,6 +23,7 @@ import org.openhab.binding.plclogo.handler.PLCBridgeHandler;
 import org.openhab.binding.plclogo.handler.PLCDateTimeHandler;
 import org.openhab.binding.plclogo.handler.PLCDigitalHandler;
 import org.openhab.binding.plclogo.handler.PLCMemoryHandler;
+import org.openhab.binding.plclogo.handler.PLCPulseHandler;
 
 /**
  * The {@link PLCLogoHandlerFactory} is responsible for creating things and
@@ -43,6 +44,7 @@ public class PLCLogoHandlerFactory extends BaseThingHandlerFactory {
         SUPPORTED_THING_TYPES_UIDS.add(THING_TYPE_ANALOG);
         SUPPORTED_THING_TYPES_UIDS.add(THING_TYPE_DIGITAL);
         SUPPORTED_THING_TYPES_UIDS.add(THING_TYPE_DATETIME);
+        SUPPORTED_THING_TYPES_UIDS.add(THING_TYPE_PULSE);
     }
 
     @Override
@@ -62,6 +64,8 @@ public class PLCLogoHandlerFactory extends BaseThingHandlerFactory {
             return new PLCDateTimeHandler(thing);
         } else if (THING_TYPE_MEMORY.equals(thing.getThingTypeUID())) {
             return new PLCMemoryHandler(thing);
+        } else if (THING_TYPE_PULSE.equals(thing.getThingTypeUID())) {
+            return new PLCPulseHandler(thing);
         }
 
         return null;
