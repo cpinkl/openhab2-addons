@@ -8,33 +8,28 @@
  */
 package org.openhab.binding.hideki.internal;
 
-import org.eclipse.jdt.annotation.NonNull;
-
-public class HidekiDecoder {
-
-    final HidekiReceiver receiver;
+public class HidekiReceiver {
 
     // forbid object construction
-    private HidekiDecoder() {
-        receiver = null;
+    private HidekiReceiver() {
     }
 
-    public HidekiDecoder(final @NonNull HidekiReceiver receiver, int pin) {
-        this.receiver = receiver;
-        create(this.receiver.getId(), pin);
+    public enum Kind {
+        RXB,
+        CC1101
+    }
+
+    public HidekiReceiver(final Kind kind) {
+        this(kind, 0, 0);
+    }
+
+    public HidekiReceiver(final Kind kind, final int device, final int interrupt) {
+        create(kind.ordinal(), device, interrupt);
     }
 
     public int getId() {
         return System.identityHashCode(this);
     }
-
-    public native void setTimeOut(int timeout);
-
-    public native boolean start();
-
-    public native boolean stop();
-
-    public native int[] getDecodedData();
 
     @Override
     protected void finalize() throws Throwable {
@@ -42,7 +37,7 @@ public class HidekiDecoder {
         destroy();
     }
 
-    private native void create(int receiver, int pin);
+    private native void create(int kind, int device, int interrupt);
 
     private native void destroy();
 }

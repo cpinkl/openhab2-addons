@@ -20,6 +20,7 @@
 			<channel id="updated" typeId="updated"/>
 			<channel id="channel" typeId="channel"/>
 			<channel id="message" typeId="message"/>
+            <channel id="rssi" typeId="rssi"/>
 		</channels>
 	</thing-type>
 

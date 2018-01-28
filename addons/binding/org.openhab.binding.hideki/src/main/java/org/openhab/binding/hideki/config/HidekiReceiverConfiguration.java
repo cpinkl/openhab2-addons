@@ -10,6 +10,8 @@ package org.openhab.binding.hideki.config;
 
 import java.util.Objects;
 
+import org.eclipse.jdt.annotation.NonNull;
+
 /**
  * The {@link PLCLogoBridgeConfiguration} hold configuration of Siemens LOGO! PLCs.
  *
@@ -17,9 +19,9 @@ import java.util.Objects;
  */
 public class HidekiReceiverConfiguration {
 
-    private Integer pin = null;
-    private Integer refresh = 1;
-    private Integer timeout = 5000;
+    private Integer pin;
+    private @NonNull Integer refresh = 1;
+    private @NonNull Integer timeout = -1;
 
     public HidekiReceiverConfiguration() {
     }
@@ -38,7 +40,7 @@ public class HidekiReceiverConfiguration {
      *
      * @param pin GPIO pin receiver connected to
      */
-    public void setGpioPin(final Integer pin) {
+    public void setGpioPin(final @NonNull Integer pin) {
         Objects.requireNonNull(pin, "GPIO pin may not be null");
         this.pin = pin;
     }
@@ -48,7 +50,7 @@ public class HidekiReceiverConfiguration {
      *
      * @return Configured refresh rate for new decoder data check
      */
-    public Integer getRefreshRate() {
+    public @NonNull Integer getRefreshRate() {
         return refresh;
     }
 
@@ -57,7 +59,7 @@ public class HidekiReceiverConfiguration {
      *
      * @param rate Refresh rate for new decoder data check
      */
-    public void setRefreshRate(Integer rate) {
+    public void setRefreshRate(final @NonNull Integer rate) {
         Objects.requireNonNull(rate, "Refresh rate may not be null");
         this.refresh = rate;
     }
@@ -67,7 +69,7 @@ public class HidekiReceiverConfiguration {
      *
      * @return Configured wait period for edge on GPIO pin
      */
-    public Integer getTimeout() {
+    public @NonNull Integer getTimeout() {
         return timeout;
     }
 
@@ -78,7 +80,7 @@ public class HidekiReceiverConfiguration {
      *
      * @param timeout Wait period for edge on GPIO pin
      */
-    public void setTimeout(Integer timeout) {
+    public void setTimeout(final @NonNull Integer timeout) {
         Objects.requireNonNull(timeout, "Timeout may not be null");
         this.timeout = timeout;
     }

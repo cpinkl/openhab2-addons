@@ -1,7 +1,7 @@
 TARGET=libhideki.so
 
-DEBUG	     = -O3
-CC	       = gcc
+DEBUG      = -O3 -fwhole-program -std=c++11
+CC         = gcc
 INCLUDE	   = -I/$(JAVA_HOME)/include                           \
              -I/$(JAVA_HOME)/include/linux                     \
              -I/usr/lib/jvm/jdk-8-oracle/include               \
@@ -14,22 +14,22 @@ INCLUDE	   = -I/$(JAVA_HOME)/include                           \
              -I/usr/lib/jvm/java-8-openjdk-armhf/include/linux \
              -I/usr/local/include -I/usr/local/include/linux
 
-CFLAGS      := $(DEBUG) -Wall $(INCLUDE) -Winline -pipe $(CARGS) -fPIC
-LIBS         =  -lm -lpthread
+CFLAGS      := $(DEBUG) -Wall $(INCLUDE) -Winline -pipe $(CARGS) -Wl,--add-stdcall-alias -fPIC
+LIBS         =  -lm -lpthread -lstdc++
 
 CLASS_PATH = ../target
 vpath %.class $(CLASS_PATH)
 
 # Should not alter anything below this line
 ###############################################################################
-SRC	=   hideki.c HidekiDecoder.c
+SRC	=   CC1101.cpp Decoder.cpp GPIO.cpp Receiver.cpp RXB.cpp HidekiJniWrapper.cpp
 
 OBJ =	$(SRC:.c=.o)
 
 all:	$(OBJ)
 	@$(CC) $(OBJ) -shared -o $(TARGET) $(INCLUDE) $(LIBS)
 
-.c.o:
+.cpp.o:
 	@echo [COMPILE] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
@@ -53,7 +53,13 @@ uninstall:
 	@echo [uninstall]
 	rm -f /usr/local/lib/$(TARGET)
 
-hideki.o: hideki.h
-HidekiDecoder.o: HidekiDecoder.h
+CC1101.o: CC1101.h
+Decoder.o: Decoder.h
+GPIO.o: GPIO.h
+Receiver.o: Receiver.h
+RXB.o: RXB.h
+HidekiJniWrapper.o: HidekiJniWrapper.h
+
 #HidekiDecoder.h : HidekiDecoder.class
 #	javah -classpath $(CLASS_PATH) $*
+

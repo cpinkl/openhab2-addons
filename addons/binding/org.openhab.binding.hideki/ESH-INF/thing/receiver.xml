@@ -45,6 +45,13 @@
 		<state readOnly="true"></state>
 	</channel-type>
 
+    <channel-type id="rssi">
+        <item-type>Number</item-type>
+        <label>Sensor signal RSSI</label>
+        <description>Received sensor RSSI value</description>
+        <state readOnly="true"></state>
+    </channel-type>
+
 	<channel-type id="temperature">
 		<item-type>Number</item-type>
 		<label>Temperature</label>

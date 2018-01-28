@@ -15,11 +15,11 @@
 			<required>false</required>
 			<default>100</default>
 		</parameter>
-		<parameter name="timeout" type="integer" min="0" step="500">
+		<parameter name="timeout" type="integer" min="-1" step="500">
 			<label>Pulse timeout</label>
 			<description>Milliseconds wait for edge on GPIO pin.</description>
 			<required>false</required>
-			<default>5000</default>
+			<default>-1</default>
 		</parameter>
 	</config-description>
 </config-description:config-descriptions>

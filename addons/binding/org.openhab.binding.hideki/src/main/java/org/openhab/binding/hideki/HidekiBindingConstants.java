@@ -30,6 +30,7 @@ public class HidekiBindingConstants {
 
     // Common channels
     public static final @NonNull String RECEIVED_UPDATE = "updated";
+    public static final @NonNull String RSSI_VALUE = "rssi";
     public static final @NonNull String SENSOR_ID = "sensor";
     public static final @NonNull String SENSOR_CHANNEL = "channel";
     public static final @NonNull String SENSOR_TYPE = "type";

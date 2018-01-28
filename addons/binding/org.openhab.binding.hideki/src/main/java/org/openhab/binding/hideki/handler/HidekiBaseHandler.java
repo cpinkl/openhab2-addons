@@ -57,6 +57,8 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
                 updateState(channelUID, new DecimalType(getChannel()));
             } else if (MESSAGE_NUMBER.equals(channelId)) {
                 updateState(channelUID, new DecimalType(getMessageNumber()));
+            } else if (RSSI_VALUE.equals(channelId)) {
+                updateState(channelUID, new DecimalType(getRSSIValue()));
             } else if (RECEIVED_UPDATE.equals(channelId)) {
                 // No update of received time
             } else {
@@ -113,6 +115,11 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
                     updateState(uChannel.getUID(), new DateTimeType(Calendar.getInstance()));
                 }
 
+                final Channel rChannel = thing.getChannel(RSSI_VALUE);
+                if (rChannel != null) {
+                    updateState(rChannel.getUID(), new DecimalType(getRSSIValue()));
+                }
+
                 final Channel iChannel = thing.getChannel(SENSOR_ID);
                 if (iChannel != null) {
                     updateState(iChannel.getUID(), new DecimalType(getSensorId()));
@@ -156,7 +163,7 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
      */
     protected int getDecodedLength() {
         final int length = data.length < 3 ? -1 : (data[2] >> 1) & 0x1F;
-        return length < 0 ? length : length + 1;
+        return length < 0 ? length : length + 2; // First byte is 0x9F preamble and last RSSI value
     }
 
     /**
@@ -191,8 +198,16 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
      *
      * @return Decoded message number
      */
-    public int getMessageNumber() {
+    private int getMessageNumber() {
         return data.length < 4 ? -1 : data[3] >> 6;
     }
 
+    /**
+     * Returns decoded RSSI value.
+     *
+     * @return Decoded RSSI value
+     */
+    private int getRSSIValue() {
+        return data[data.length - 1];
+    }
 }

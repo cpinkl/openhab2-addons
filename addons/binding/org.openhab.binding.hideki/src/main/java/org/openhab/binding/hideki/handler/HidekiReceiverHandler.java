@@ -26,6 +26,7 @@ import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.hideki.config.HidekiReceiverConfiguration;
 import org.openhab.binding.hideki.internal.HidekiDecoder;
+import org.openhab.binding.hideki.internal.HidekiReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
 
     private final Logger logger = LoggerFactory.getLogger(HidekiReceiverHandler.class);
 
+    private HidekiDecoder decoder;
     private Set<HidekiBaseHandler> handlers = new HashSet<HidekiBaseHandler>();
     private HidekiReceiverConfiguration config = getConfigAs(HidekiReceiverConfiguration.class);
 
@@ -46,7 +48,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
     private final Runnable dataReader = new Runnable() {
         @Override
         public void run() {
-            final int[] data = HidekiDecoder.getDecodedData();
+            final int[] data = decoder.getDecodedData();
             if ((data != null) && (data[0] == 0x9F)) {
                 synchronized (handlers) {
                     for (HidekiBaseHandler handler : handlers) {
@@ -94,14 +96,11 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
         scheduler.execute(new Runnable() {
             @Override
             public void run() {
-                boolean configured = (config.getGpioPin() != null);
-                configured = configured && (config.getRefreshRate() != null);
-                configured = configured && (config.getTimeout() != null);
-
-                if (configured) {
-                    final Integer pin = config.getGpioPin();
-                    HidekiDecoder.setTimeOut(config.getTimeout().intValue());
-                    if (HidekiDecoder.startDecoder(pin.intValue()) == 0) {
+                final Integer pin = config.getGpioPin();
+                if ((pin != null) && (decoder == null)) {
+                    decoder = new HidekiDecoder(new HidekiReceiver(HidekiReceiver.Kind.CC1101, 1, 0), pin);
+                    decoder.setTimeOut(config.getTimeout().intValue());
+                    if (decoder.start()) {
                         if (readerJob == null) {
                             final Integer interval = config.getRefreshRate();
                             logger.info("Creating new reader job on pin {} with interval {} sec.", pin, interval);
@@ -111,6 +110,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
                     } else {
                         final String message = "Can not start decoder on pin: " + pin.toString() + ".";
                         updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, message);
+                        decoder = null;
                     }
                 } else {
                     final String message = "Can not initialize decoder. Please, check parameter.";
@@ -128,7 +128,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
         logger.debug("Dispose Hideki receiver handler.");
         super.dispose();
 
-        if (readerJob != null) {
+        if ((readerJob != null) && (decoder != null)) {
             readerJob.cancel(false);
             while (!readerJob.isDone()) {
                 try {
@@ -140,7 +140,8 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
             }
             readerJob = null;
 
-            HidekiDecoder.stopDecoder(config.getGpioPin().intValue());
+            decoder.stop();
+            decoder = null;
             logger.info("Destroy hideki reader job.");
         }
     }

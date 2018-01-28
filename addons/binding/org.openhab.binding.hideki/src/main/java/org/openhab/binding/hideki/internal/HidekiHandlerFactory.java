@@ -31,6 +31,9 @@ import org.openhab.binding.hideki.handler.HidekiUVmeterHandler;
  * @author Alexander Falkenstern - Initial contribution
  */
 public class HidekiHandlerFactory extends BaseThingHandlerFactory {
+    static {
+        NativeLibraryLoader.load("libhideki.so");
+    }
 
     private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = new HashSet<ThingTypeUID>();
 
