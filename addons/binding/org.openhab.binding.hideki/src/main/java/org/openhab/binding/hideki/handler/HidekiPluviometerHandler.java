@@ -15,7 +15,6 @@ import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
-import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -51,7 +50,8 @@ public class HidekiPluviometerHandler extends HidekiBaseHandler {
         if (command instanceof RefreshType && (data != null)) {
             final String channelId = channelUID.getId();
             if (RAIN_LEVEL.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getRainLevel()));
+                double level = 0.7 * ((data[5] << 8) + data[4]);
+                updateState(channelUID, new DecimalType(level));
             } else {
                 super.handleCommand(channelUID, command);
             }
@@ -93,25 +93,20 @@ public class HidekiPluviometerHandler extends HidekiBaseHandler {
         }
 
         if (TYPE == getDecodedType(data)) {
-            super.setData(data); // Decode common parts first
-            if (data.length == getDecodedLength()) {
+            if (data.length == getDecodedLength(data)) {
                 if (logger.isTraceEnabled()) {
                     logger.trace("Got new pluviometer data: {}.", Arrays.toString(data));
                 }
-
                 synchronized (this) {
                     if (this.data == null) {
                         this.data = new int[data.length];
                     }
                     System.arraycopy(data, 0, this.data, 0, data.length);
                 }
-
-                final Channel rChannel = thing.getChannel(RAIN_LEVEL);
-                if (rChannel != null) {
-                    updateState(rChannel.getUID(), new DecimalType(getRainLevel()));
-                }
+                super.setData(data);
             } else {
-                logger.error("Got wrong pluviometer data length {}.", data.length);
+                this.data = null;
+                logger.warn("Got wrong pluviometer data length {}.", data.length);
             }
         }
     }
@@ -122,15 +117,6 @@ public class HidekiPluviometerHandler extends HidekiBaseHandler {
     @Override
     protected int getSensorType() {
         return TYPE;
-    }
-
-    /**
-     * Returns decoded cumulated rain level.
-     *
-     * @return Decoded cumulated rain level
-     */
-    private double getRainLevel() {
-        return 0.7 * ((data[5] << 8) + data[4]);
     }
 
 }

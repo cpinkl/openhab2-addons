@@ -27,6 +27,11 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
         result = -1;
       }
       close(fd);
+
+      snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
+      while (access(buffer, F_OK) == -1) {
+        sleep(1);
+      }
     } else {
       snprintf(buffer, sizeof(buffer), "Can not export pin %d", pin);
       result = -1;
@@ -99,6 +104,11 @@ int GPIO::disable(const int& pin)
           result = -1;
         }
         close(fd);
+
+        snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
+        while (access(buffer, F_OK) == 0) {
+          sleep(1);
+        }
       } else {
         snprintf(buffer, sizeof(buffer), "Can not unexport pin %d", pin);
         result = -1;
@@ -171,12 +181,12 @@ int GPIO::write(const int& pin, const uint8_t& value)
   if (fd >= 0) {
     int bytes = snprintf(buffer, sizeof(buffer), "%d", value);
     if (::write(fd, buffer, bytes) < 0) {
-      snprintf(buffer, sizeof(buffer), "Can not activate pin %d", pin);
+      snprintf(buffer, sizeof(buffer), "Can not write to pin %d", pin);
       result = -1;
     }
     close(fd);
   } else {
-    snprintf(buffer, sizeof(buffer), "Can not export pin %d", pin);
+    snprintf(buffer, sizeof(buffer), "Can not open pin %d for write", pin);
     result = -1;
   }
 

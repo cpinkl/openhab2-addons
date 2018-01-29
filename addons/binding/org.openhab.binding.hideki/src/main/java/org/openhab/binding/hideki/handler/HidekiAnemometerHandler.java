@@ -15,7 +15,6 @@ import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
-import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -51,15 +50,29 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
         if (command instanceof RefreshType && (data != null)) {
             final String channelId = channelUID.getId();
             if (TEMPERATURE.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getTemperature()));
+                double temperature = (data[5] & 0x0F) * 10 + (data[4] >> 4) + (data[4] & 0x0F) * 0.1;
+                if ((data[5] >> 4) != 0x0C) {
+                    temperature = (data[5] >> 4) == 0x04 ? -temperature : Double.MAX_VALUE;
+                }
+                updateState(channelUID, new DecimalType(temperature));
             } else if (CHILL.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getWindChill()));
+                double chill = (data[7] & 0x0F) * 10 + (data[6] >> 4) + (data[6] & 0x0F) * 0.1;
+                if ((data[7] >> 4) != 0x0C) {
+                    chill = (data[7] >> 4) == 0x04 ? -chill : Double.MAX_VALUE;
+                }
+                updateState(channelUID, new DecimalType(chill));
             } else if (SPEED.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getWindSpeed()));
+                double speed = (data[8] >> 4) + (data[8] & 0x0F) / 10.0 + (data[9] & 0x0F) * 10.0;
+                updateState(channelUID, new DecimalType(1.60934 * speed));
             } else if (GUST.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getWindGust()));
+                double gust = (data[9] >> 4) / 10.0 + (data[10] & 0x0F) + (data[10] >> 4) * 10.0;
+                updateState(channelUID, new DecimalType(1.60934 * gust));
             } else if (DIRECTION.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getWindDirection()));
+                int segment = (data[11] >> 4);
+                segment = segment ^ (segment & 8) >> 1;
+                segment = segment ^ (segment & 4) >> 1;
+                segment = segment ^ (segment & 2) >> 1;
+                updateState(channelUID, new DecimalType(22.5 * (-segment & 0xF)));
             } else {
                 super.handleCommand(channelUID, command);
             }
@@ -101,45 +114,20 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
         }
 
         if (TYPE == getDecodedType(data)) {
-            super.setData(data); // Decode common parts first
-            if (data.length == getDecodedLength()) {
+            if (data.length == getDecodedLength(data)) {
                 if (logger.isTraceEnabled()) {
                     logger.trace("Got new anemometer data: {}.", Arrays.toString(data));
                 }
-
                 synchronized (this) {
                     if (this.data == null) {
                         this.data = new int[data.length];
                     }
                     System.arraycopy(data, 0, this.data, 0, data.length);
                 }
-
-                final Channel tChannel = thing.getChannel(TEMPERATURE);
-                if (tChannel != null) {
-                    updateState(tChannel.getUID(), new DecimalType(getTemperature()));
-                }
-
-                final Channel cChannel = thing.getChannel(CHILL);
-                if (cChannel != null) {
-                    updateState(cChannel.getUID(), new DecimalType(getWindChill()));
-                }
-
-                final Channel sChannel = thing.getChannel(SPEED);
-                if (sChannel != null) {
-                    updateState(sChannel.getUID(), new DecimalType(getWindSpeed()));
-                }
-
-                final Channel gChannel = thing.getChannel(GUST);
-                if (gChannel != null) {
-                    updateState(gChannel.getUID(), new DecimalType(getWindGust()));
-                }
-
-                final Channel dChannel = thing.getChannel(DIRECTION);
-                if (dChannel != null) {
-                    updateState(dChannel.getUID(), new DecimalType(getWindDirection()));
-                }
+                super.setData(data);
             } else {
-                logger.error("Got wrong anemometer data length {}.", data.length);
+                this.data = null;
+                logger.warn("Got wrong anemometer data length {}.", data.length);
             }
         }
     }
@@ -150,65 +138,6 @@ public class HidekiAnemometerHandler extends HidekiBaseHandler {
     @Override
     protected int getSensorType() {
         return TYPE;
-    }
-
-    /**
-     * Returns decoded temperature.
-     *
-     * @return Decoded temperature
-     */
-    private double getTemperature() {
-        double value = (data[5] & 0x0F) * 10 + (data[4] >> 4) + (data[4] & 0x0F) * 0.1;
-        if ((data[5] >> 4) != 0x0C) {
-            value = (data[5] >> 4) == 0x04 ? -value : Double.MAX_VALUE;
-        }
-
-        return value;
-    }
-
-    /**
-     * Returns decoded wind chill.
-     *
-     * @return Decoded wind chill
-     */
-    private double getWindChill() {
-        double value = (data[7] & 0x0F) * 10 + (data[6] >> 4) + (data[6] & 0x0F) * 0.1;
-        if ((data[7] >> 4) != 0x0C) {
-            value = (data[7] >> 4) == 0x04 ? -value : Double.MAX_VALUE;
-        }
-
-        return value;
-    }
-
-    /**
-     * Returns decoded wind speed.
-     *
-     * @return Decoded wind speed
-     */
-    private double getWindSpeed() {
-        return 1.60934 * ((data[8] >> 4) + (data[8] & 0x0F) / 10.0 + (data[9] & 0x0F) * 10.0);
-    }
-
-    /**
-     * Returns decoded wind gust.
-     *
-     * @return Decoded wind gust
-     */
-    private double getWindGust() {
-        return 1.60934 * ((data[9] >> 4) / 10.0 + (data[10] & 0x0F) + (data[10] >> 4) * 10.0);
-    }
-
-    /**
-     * Returns decoded wind direction.
-     *
-     * @return Decoded wind direction
-     */
-    private double getWindDirection() {
-        int segment = (data[11] >> 4);
-        segment = segment ^ (segment & 8) >> 1;
-        segment = segment ^ (segment & 4) >> 1;
-        segment = segment ^ (segment & 2) >> 1;
-        return 22.5 * (-segment & 0xF);
     }
 
 }

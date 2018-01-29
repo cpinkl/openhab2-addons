@@ -16,7 +16,6 @@ import java.util.Objects;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.OnOffType;
-import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -52,11 +51,17 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
         if (command instanceof RefreshType && (data != null)) {
             final String channelId = channelUID.getId();
             if (TEMPERATURE.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getTemperature()));
+                double temperature = (data[5] & 0x0F) * 10.0 + (data[4] >> 4) + (data[4] & 0x0F) * 0.1;
+                if ((data[5] >> 4) != 0x0C) {
+                    temperature = (data[5] >> 4) == 0x04 ? -temperature : Double.MAX_VALUE;
+                }
+                updateState(channelUID, new DecimalType(temperature));
             } else if (HUMIDITY.equals(channelId)) {
-                updateState(channelUID, new DecimalType(getHumidity()));
+                double humidity = (data[6] >> 4) * 10.0 + (data[6] & 0x0F);
+                updateState(channelUID, new DecimalType(humidity));
             } else if (BATTERY.equals(channelId)) {
-                updateState(channelUID, getBatteryState() ? OnOffType.ON : OnOffType.OFF);
+                boolean state = (data[2] >> 6) > 0;
+                updateState(channelUID, state ? OnOffType.ON : OnOffType.OFF);
             } else {
                 super.handleCommand(channelUID, command);
             }
@@ -98,35 +103,20 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
         }
 
         if (TYPE == getDecodedType(data)) {
-            super.setData(data); // Decode common parts first
-            if (data.length == getDecodedLength()) {
+            if (data.length == getDecodedLength(data)) {
                 if (logger.isTraceEnabled()) {
                     logger.trace("Got new thermometer data: {}.", Arrays.toString(data));
                 }
-
                 synchronized (this) {
                     if (this.data == null) {
                         this.data = new int[data.length];
                     }
                     System.arraycopy(data, 0, this.data, 0, data.length);
                 }
-
-                final Channel tChannel = thing.getChannel(TEMPERATURE);
-                if (tChannel != null) {
-                    updateState(tChannel.getUID(), new DecimalType(getTemperature()));
-                }
-
-                final Channel hChannel = thing.getChannel(HUMIDITY);
-                if (hChannel != null) {
-                    updateState(hChannel.getUID(), new DecimalType(getHumidity()));
-                }
-
-                final Channel bChannel = thing.getChannel(BATTERY);
-                if (bChannel != null) {
-                    updateState(bChannel.getUID(), getBatteryState() ? OnOffType.ON : OnOffType.OFF);
-                }
+                super.setData(data);
             } else {
-                logger.error("Got wrong thermometer data length {}.", data.length);
+                this.data = null;
+                logger.warn("Got wrong thermometer data length {}.", data.length);
             }
         }
     }
@@ -137,39 +127,6 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
     @Override
     protected int getSensorType() {
         return TYPE;
-    }
-
-    /**
-     * Returns decoded temperature.
-     *
-     * @return Decoded temperature
-     */
-    private double getTemperature() {
-        double value = (data[5] & 0x0F) * 10 + (data[4] >> 4) + (data[4] & 0x0F) * 0.1;
-        if ((data[5] >> 4) != 0x0C) {
-            value = (data[5] >> 4) == 0x04 ? -value : Double.MAX_VALUE;
-        }
-
-        return value;
-    }
-
-    /**
-     * Returns decoded humidity.
-     *
-     * @return Decoded humidity
-     */
-    private double getHumidity() {
-        return (data[6] >> 4) * 10 + (data[6] & 0x0F);
-    }
-
-    /**
-     * Returns decoded battery state. Is true, if battery is ok
-     * and false otherwise
-     *
-     * @return Decoded battery state
-     */
-    private boolean getBatteryState() {
-        return (data[2] >> 6) > 0;
     }
 
 }
