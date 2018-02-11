@@ -1,18 +1,17 @@
 # Hideki Binding
 
-_Give some details about what this binding is meant for - a protocol, system, specific device._
-
-_If possible, provide some resources like pictures, a YouTube video, etc. to give an impression of what can be done with this binding. You can place such resources into a `doc` folder next to this README.md._
+This binding provides native support for Hideki based weather stations, like Cresta, TFA-Dostmann and many others.
+Two different wireless receivers are implemented now:
+  * Superheterodyne (RXB6, RXB8 and similar)
+  * Based on CC101 chip
 
 ## Supported Things
 
-_Please describe the different supported things / devices within this section._
-_Which different types are supported, which models were tested etc.?_
-_Note that it is planned to generate some part of this based on the XML files within ```ESH-INF/thing``` of your binding._
+Receiver, Thermometer, Anemometer
 
 ## Discovery
 
-_Describe the available auto-discovery features here. Mention for what it works and what needs to be kept in mind when using it._
+Discovery is not available.
 
 ## Binding Configuration
 
