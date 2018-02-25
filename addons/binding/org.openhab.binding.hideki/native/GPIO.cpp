@@ -28,10 +28,11 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
       }
       close(fd);
 
+      struct stat state;
       snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
-      while (access(buffer, F_OK) == -1) {
+      do {
         sleep(1);
-      }
+      } while (stat(buffer, &state) != 0);
     } else {
       snprintf(buffer, sizeof(buffer), "Can not export pin %d", pin);
       result = -1;
@@ -106,9 +107,9 @@ int GPIO::disable(const int& pin)
         close(fd);
 
         snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
-        while (access(buffer, F_OK) == 0) {
+        do {
           sleep(1);
-        }
+        } while (access(buffer, F_OK) == 0);
       } else {
         snprintf(buffer, sizeof(buffer), "Can not unexport pin %d", pin);
         result = -1;

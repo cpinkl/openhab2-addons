@@ -97,8 +97,11 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
             @Override
             public void run() {
                 final Integer pin = config.getGpioPin();
+                final String device = config.getDevice();
                 if ((pin != null) && (decoder == null)) {
-                    decoder = new HidekiDecoder(new HidekiReceiver(HidekiReceiver.Kind.CC1101, 1, 0), pin);
+                    final Integer interrupt = config.getInterrupt();
+                    final HidekiReceiver.Kind kind = HidekiReceiver.Kind.CC1101;
+                    decoder = new HidekiDecoder(new HidekiReceiver(kind, device, interrupt), pin);
                     decoder.setTimeOut(config.getTimeout().intValue());
                     if (decoder.start()) {
                         if (readerJob == null) {

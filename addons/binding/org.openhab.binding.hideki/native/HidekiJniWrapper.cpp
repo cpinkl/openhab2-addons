@@ -157,7 +157,7 @@ void JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_destroy(JNIE
   env->MonitorExit(object);
 }
 
-void JNICALL Java_org_openhab_binding_hideki_internal_HidekiReceiver_create(JNIEnv* env, jobject object, jint kind, jint device, jint interrupt)
+void JNICALL Java_org_openhab_binding_hideki_internal_HidekiReceiver_create(JNIEnv* env, jobject object, jint kind, jstring device, jint interrupt)
 {
   env->MonitorEnter(object);
   jmethodID getId = env->GetMethodID(env->GetObjectClass(object), "getId", "()I");
@@ -175,11 +175,13 @@ void JNICALL Java_org_openhab_binding_hideki_internal_HidekiReceiver_create(JNIE
           break;
         }
         case 1: {
-          CC1101* receiver = new CC1101(device, interrupt);
+          const char *buffer = env->GetStringUTFChars(device, nullptr);
+          CC1101* receiver = new CC1101(std::string(buffer), interrupt);
           if (!ReceiverMap.emplace(id, receiver).second) {
             delete receiver;
             receiver = nullptr;
           }
+          env->ReleaseStringUTFChars(device, buffer);
           break;
         }
         default: {

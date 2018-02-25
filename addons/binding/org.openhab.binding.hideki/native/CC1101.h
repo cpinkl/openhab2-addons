@@ -3,10 +3,11 @@
 #include "Receiver.h"
 
 #include <inttypes.h>
+#include <string>
 
 class CC1101 final : public Receiver {
   public:
-    CC1101(const int& device, const int& interrupt);
+    CC1101(std::string device, const int& interrupt);
     virtual ~CC1101();
 
     State isInitialized() const override;

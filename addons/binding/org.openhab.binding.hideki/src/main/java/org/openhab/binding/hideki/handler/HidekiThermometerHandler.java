@@ -15,7 +15,6 @@ import java.util.Objects;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DecimalType;
-import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
@@ -50,7 +49,15 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
 
         if (command instanceof RefreshType && (data != null)) {
             final String channelId = channelUID.getId();
-            if (TEMPERATURE.equals(channelId)) {
+            if (SENSOR_CHANNEL.equals(channelId)) {
+                int channel = data.length < 2 ? -1 : data[1] >> 5;
+                if ((channel == 5) || (channel == 6)) {
+                    channel = channel - 1;
+                } else if (channel > 3) {
+                    channel = -1;
+                }
+                updateState(channelUID, new DecimalType(channel));
+            } else if (TEMPERATURE.equals(channelId)) {
                 double temperature = (data[5] & 0x0F) * 10.0 + (data[4] >> 4) + (data[4] & 0x0F) * 0.1;
                 if ((data[5] >> 4) != 0x0C) {
                     temperature = (data[5] >> 4) == 0x04 ? -temperature : Double.MAX_VALUE;
@@ -59,9 +66,6 @@ public class HidekiThermometerHandler extends HidekiBaseHandler {
             } else if (HUMIDITY.equals(channelId)) {
                 double humidity = (data[6] >> 4) * 10.0 + (data[6] & 0x0F);
                 updateState(channelUID, new DecimalType(humidity));
-            } else if (BATTERY.equals(channelId)) {
-                boolean state = (data[2] >> 6) > 0;
-                updateState(channelUID, state ? OnOffType.ON : OnOffType.OFF);
             } else {
                 super.handleCommand(channelUID, command);
             }

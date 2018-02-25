@@ -16,6 +16,7 @@ import java.util.Objects;
 import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
+import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -52,22 +53,17 @@ public abstract class HidekiBaseHandler extends BaseThingHandler {
         if (command instanceof RefreshType && (data != null)) {
             final String channelId = channelUID.getId();
             if (SENSOR_ID.equals(channelId)) {
-                int id = data.length < 2 ? -1 : data[1] & 0x1F;
+                int id = data.length < 2 ? -1 : data[1];
                 updateState(channelUID, new DecimalType(id));
-            } else if (SENSOR_CHANNEL.equals(channelId)) {
-                int channel = data.length < 2 ? -1 : data[1] >> 5;
-                if ((channel == 5) || (channel == 6)) {
-                    channel = channel - 1;
-                } else if (channel > 3) {
-                    channel = 0;
-                }
-                updateState(channelUID, new DecimalType(channel));
             } else if (MESSAGE_NUMBER.equals(channelId)) {
                 int message = data.length < 4 ? -1 : data[3] >> 6;
                 updateState(channelUID, new DecimalType(message));
             } else if (RSSI_VALUE.equals(channelId)) {
                 int rssi = data[data.length - 1];
                 updateState(channelUID, new DecimalType(rssi));
+            } else if (BATTERY.equals(channelId)) {
+                boolean state = (data[2] >> 6) == 3;
+                updateState(channelUID, state ? OnOffType.ON : OnOffType.OFF);
             } else if (RECEIVED_UPDATE.equals(channelId)) {
                 // No update of received time
             } else {

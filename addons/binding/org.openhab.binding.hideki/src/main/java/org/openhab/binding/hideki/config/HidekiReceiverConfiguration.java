@@ -19,11 +19,24 @@ import org.eclipse.jdt.annotation.NonNull;
  */
 public class HidekiReceiverConfiguration {
 
+    private @NonNull String receiver;
     private Integer pin;
+
     private @NonNull Integer refresh = 1;
     private @NonNull Integer timeout = -1;
+    private @NonNull String device = "/dev/spidev0.0";
+    private @NonNull Integer interrupt = 0;
 
     public HidekiReceiverConfiguration() {
+    }
+
+    public @NonNull String getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(final @NonNull String receiver) {
+        Objects.requireNonNull(receiver, "Receiver may not be null");
+        this.receiver = receiver.trim();
     }
 
     /**
@@ -83,6 +96,24 @@ public class HidekiReceiverConfiguration {
     public void setTimeout(final @NonNull Integer timeout) {
         Objects.requireNonNull(timeout, "Timeout may not be null");
         this.timeout = timeout;
+    }
+
+    public @NonNull String getDevice() {
+        return device;
+    }
+
+    public void setDevice(final @NonNull String device) {
+        Objects.requireNonNull(device, "Communication device may not be null");
+        this.device = device.trim();
+    }
+
+    public @NonNull Integer getInterrupt() {
+        return interrupt;
+    }
+
+    public void setInterrupt(final @NonNull Integer interrupt) {
+        Objects.requireNonNull(device, "Interrupt pin may not be null");
+        this.interrupt = interrupt;
     }
 
 }

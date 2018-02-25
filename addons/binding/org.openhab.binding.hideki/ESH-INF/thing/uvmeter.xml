@@ -14,13 +14,13 @@
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>
+            <channel id="battery" typeId="battery"/>
+            <channel id="message" typeId="message"/>
+            <channel id="rssi" typeId="rssi"/>
+            <channel id="updated" typeId="updated"/>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="uv" typeId="uv"/>
 			<channel id="med" typeId="med"/>
-			<channel id="updated" typeId="updated"/>
-			<channel id="channel" typeId="channel"/>
-			<channel id="message" typeId="message"/>
-            <channel id="rssi" typeId="rssi"/>
 		</channels>
 	</thing-type>
 

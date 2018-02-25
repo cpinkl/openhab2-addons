@@ -14,15 +14,22 @@
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>
+            <channel id="battery" typeId="battery"/>
+            <channel id="message" typeId="message"/>
+            <channel id="rssi" typeId="rssi"/>
+            <channel id="updated" typeId="updated"/>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="humidity" typeId="humidity"/>
-			<channel id="battery" typeId="battery"/>
-			<channel id="updated" typeId="updated"/>
 			<channel id="channel" typeId="channel"/>
-			<channel id="message" typeId="message"/>
-            <channel id="rssi" typeId="rssi"/>
 		</channels>
 	</thing-type>
+
+    <channel-type id="channel">
+        <item-type>Number</item-type>
+        <label>Sensor channel</label>
+        <description>Received sensor channel</description>
+        <state readOnly="true"></state>
+    </channel-type>
 
 	<channel-type id="humidity">
 		<item-type>Number</item-type>
@@ -31,10 +38,4 @@
 		<state readOnly="true"></state>
 	</channel-type>
 
-	<channel-type id="battery">
-		<item-type>Switch</item-type>
-		<label>Battery</label>
-		<description>Received battery state</description>
-		<state readOnly="true"></state>
-	</channel-type>
 </thing:thing-descriptions>

@@ -6,18 +6,23 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
+#include <algorithm>
 #include <array>
 #include <cstring>
 #include <limits>
 
-CC1101::CC1101(const int& device, const int& interrupt)
+CC1101::CC1101(std::string device, const int& interrupt)
   :Receiver(),
    mSpiDevice(-1)
 {
-  if ((0 <= device) && (device <= 1) && ((interrupt == 0) || (interrupt == 2))) {
-    static char buffer[FILENAME_MAX] = { '\0' };
-    snprintf(buffer, sizeof(buffer), "/dev/spidev0.%d", device);
-    mSpiDevice = ::open(buffer, O_RDWR);
+  device.erase(device.begin(), std::find_if(device.begin(), device.end(), [](int ch) {
+    return !std::isspace(ch);
+  }));
+  device.erase(std::find_if(device.rbegin(), device.rend(), [](int ch) {
+    return !std::isspace(ch);
+  }).base(), device.end());
+  if (!device.empty() && ((interrupt == 0) || (interrupt == 2))) {
+    mSpiDevice = ::open(device.c_str(), O_RDWR);
   }
 
   if (mSpiDevice >= 0) {

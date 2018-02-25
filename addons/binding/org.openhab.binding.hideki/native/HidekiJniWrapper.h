@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_org_openhab_binding_hideki_internal_HidekiDecoder_de
  * Method:    create
  * Signature: (Lorg/openhab/binding/hideki/internal/HidekiReceiver/Kind;II)V
  */
-JNIEXPORT void JNICALL Java_org_openhab_binding_hideki_internal_HidekiReceiver_create(JNIEnv*, jobject, jint, jint, jint);
+JNIEXPORT void JNICALL Java_org_openhab_binding_hideki_internal_HidekiReceiver_create(JNIEnv*, jobject, jint, jstring, jint);
 
 /*
  * Class:     org_openhab_binding_hideki_internal_HidekiReceiver

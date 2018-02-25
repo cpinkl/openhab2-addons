@@ -8,6 +8,8 @@
  */
 package org.openhab.binding.hideki.internal;
 
+import org.eclipse.jdt.annotation.NonNull;
+
 public class HidekiReceiver {
 
     // forbid object construction
@@ -19,12 +21,8 @@ public class HidekiReceiver {
         CC1101
     }
 
-    public HidekiReceiver(final Kind kind) {
-        this(kind, 0, 0);
-    }
-
-    public HidekiReceiver(final Kind kind, final int device, final int interrupt) {
-        create(kind.ordinal(), device, interrupt);
+    public HidekiReceiver(final Kind kind, final @NonNull String device, final @NonNull Integer interrupt) {
+        create(kind.ordinal(), device, interrupt.intValue());
     }
 
     public int getId() {
@@ -37,7 +35,7 @@ public class HidekiReceiver {
         destroy();
     }
 
-    private native void create(int kind, int device, int interrupt);
+    private native void create(int kind, @NonNull String device, int interrupt);
 
     private native void destroy();
 }
