@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
 
 public class NativeLibraryLoader {
 
-    private static final Set<String> loadedLibraries = new TreeSet<String>();
+    private static final Set<String> loadedLibraries = new TreeSet<>();
     private static final Logger logger = LoggerFactory.getLogger(NativeLibraryLoader.class);
 
     private static boolean initialized = false;

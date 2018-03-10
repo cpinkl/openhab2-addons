@@ -65,8 +65,8 @@ CC1101::CC1101(std::string device, const int& interrupt)
     // http://www.ti.com/lit/ds/symlink/cc1101.pdf
     // http://www.ti.com/lit/an/swra215e/swra215e.pdf
     std::array<uint8_t, 48> buffer = { 0x40 | WRITE_BURST, // 433.92 MHz, 2kHz data rate, 160kHz bandwidth
-      0x2E,  // High-Impedance - GDO2 is not connected
-      0x2E,  // High-Impedance - GDO1 is also used as the SPI output from the CC1101
+      0x2E,  // IOCFG2        High-Impedance - GDO2 is not connected
+      0x2E,  // IOCFG1        High-Impedance - GDO1 is also used as the SPI output from the CC1101
       0x0D,  // IOCFG0        GDO0 Output Pin Configuration
       0x47,  // FIFOTHR       RX FIFO and TX FIFO Thresholds
       0xD3,  // Was 0x57,  // SYNC1         Sync Word, High Byte

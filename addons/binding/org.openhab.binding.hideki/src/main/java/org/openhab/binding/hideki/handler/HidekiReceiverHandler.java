@@ -41,7 +41,7 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
     private final Logger logger = LoggerFactory.getLogger(HidekiReceiverHandler.class);
 
     private HidekiDecoder decoder;
-    private Set<HidekiBaseHandler> handlers = new HashSet<HidekiBaseHandler>();
+    private Set<HidekiBaseHandler> handlers = new HashSet<>();
     private HidekiReceiverConfiguration config = getConfigAs(HidekiReceiverConfiguration.class);
 
     private ScheduledFuture<?> readerJob = null;

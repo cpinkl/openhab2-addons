@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 
 #include <cstring>
+#include <limits>
 
 Decoder::Decoder(const int& pin, const Receiver& receiver)
   :mPin(pin),
@@ -18,14 +19,19 @@ Decoder::Decoder(const int& pin, const Receiver& receiver)
    mDecoderThreadIsAlive(false),
    mDecoderLock(PTHREAD_RWLOCK_INITIALIZER)
 {
-  std::memset(&mReceivedData, 0, sizeof(struct ReceivedData));
+  if(pthread_rwlock_init(&mDecoderLock, nullptr) != 0) {
+    mPin = std::numeric_limits<decltype(mPin)>::max();
+  }
 }
 
 
 Decoder::~Decoder()
 {
   stop();
-  mPin = -1;
+  if(mPin != std::numeric_limits<decltype(mPin)>::max()) {
+    pthread_rwlock_destroy(&mDecoderLock);
+    mPin = -1;
+  }
 }
 
 void Decoder::setTimeout(const int& timeout)
@@ -39,22 +45,14 @@ void Decoder::setTimeout(const int& timeout)
 * Result: 0 = O.K., -1 = Error
 */
 bool Decoder::start() {
+  std::memset(&mReceivedData, 0, sizeof(decltype(mReceivedData)));
   if ((0 < mPin) && (mPin < 41) && !mDecoderThreadIsAlive) {
-    int result = GPIO::enable(mPin, GPIO::Direction::IN, GPIO::Edge::BOTH);
-    if (result == 0) {
-      result = pthread_rwlock_init(&mDecoderLock, nullptr);
-    }
-    if (result == 0) {
-      result = pthread_create(&mDecoderThread, nullptr, decode, this);
-      if (result == 0) {
+    if (GPIO::enable(mPin, GPIO::Direction::IN, GPIO::Edge::BOTH) == 0) {
+      if (pthread_create(&mDecoderThread, nullptr, decode, this) == 0) {
         mDecoderThreadIsAlive = true;
       } else {
-        pthread_rwlock_destroy(&mDecoderLock);
+        GPIO::disable(mPin);
       }
-    }
-
-    if (result != 0) {
-      GPIO::disable(mPin);
     }
   }
 
@@ -67,19 +65,13 @@ bool Decoder::start() {
 bool Decoder::stop() {
   if (mDecoderThreadIsAlive) {
     mStopDecoderThread = true;
-
-    int result = pthread_join(mDecoderThread, nullptr);
-    if (result == 0) {
-      result = pthread_rwlock_destroy(&mDecoderLock);
-      if (result == 0) {
-        mDecoderThreadIsAlive = false;
-        GPIO::disable(mPin);
-      }
+    if (pthread_join(mDecoderThread, nullptr) == 0) {
+      mDecoderThreadIsAlive = false;
+      GPIO::disable(mPin);
     }
-
-    std::memset(&mReceivedData, 0, sizeof(struct ReceivedData));
   }
 
+  std::memset(&mReceivedData, 0, sizeof(decltype(mReceivedData)));
   return !mDecoderThreadIsAlive;
 }
 
@@ -95,7 +87,7 @@ int Decoder::getDecodedData(std::array<uint8_t, DATA_BUFFER_LENGTH>& data, doubl
 
     pthread_rwlock_wrlock(&mDecoderLock);
     mReceivedNewData = false;
-    std::memset(&mReceivedData, 0, sizeof(struct ReceivedData));
+    std::memset(&mReceivedData, 0, sizeof(decltype(mReceivedData)));
   }
   pthread_rwlock_unlock(&mDecoderLock);
 
@@ -228,7 +220,7 @@ void* Decoder::decode(void* parameter)
           if (crc2 == buffer.data[length + 2]) {
             pthread_rwlock_wrlock(&decoder->mDecoderLock);
             decoder->mReceivedNewData = true;
-            std::memcpy(&decoder->mReceivedData, &buffer, sizeof(struct ReceivedData));
+            std::memcpy(&decoder->mReceivedData, &buffer, sizeof(decltype(buffer)));
             pthread_rwlock_unlock(&decoder->mDecoderLock);
           }
           reset = 1;
@@ -244,7 +236,7 @@ void* Decoder::decode(void* parameter)
       count = 0;
       value = 0;
       halfBit = 0;
-      std::memset(&buffer, 0, sizeof(struct ReceivedData));
+      std::memset(&buffer, 0, sizeof(decltype(buffer)));
     }
   }
 

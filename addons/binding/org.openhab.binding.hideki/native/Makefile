@@ -14,7 +14,7 @@ INCLUDE	   = -I/$(JAVA_HOME)/include                           \
              -I/usr/lib/jvm/java-8-openjdk-armhf/include/linux \
              -I/usr/local/include -I/usr/local/include/linux
 
-CFLAGS      := $(DEBUG) -Wall $(INCLUDE) -Winline -pipe $(CARGS) -Wl,--add-stdcall-alias -fPIC
+CFLAGS      := $(DEBUG) -pedantic -Wall $(INCLUDE) -Winline -pipe $(CARGS) -Wl,--add-stdcall-alias -fPIC
 LIBS         =  -lm -lpthread -lstdc++
 
 CLASS_PATH = ../target

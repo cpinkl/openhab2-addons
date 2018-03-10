@@ -35,7 +35,7 @@ public class HidekiHandlerFactory extends BaseThingHandlerFactory {
         NativeLibraryLoader.load("libhideki.so");
     }
 
-    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = new HashSet<ThingTypeUID>();
+    private static final Set<ThingTypeUID> SUPPORTED_THING_TYPES_UIDS = new HashSet<>();
 
     /**
      * Constructor.

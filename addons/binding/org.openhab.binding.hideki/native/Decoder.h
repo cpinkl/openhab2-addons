@@ -10,7 +10,7 @@
 class Decoder
 {
   public:
-    static constexpr uint8_t DATA_BUFFER_LENGTH = 15;
+    static constexpr std::size_t DATA_BUFFER_LENGTH = 15;
 
     Decoder(const int& pin, const Receiver& receiver);
     virtual ~Decoder();
