@@ -38,8 +38,8 @@ public class HidekiDecoder {
 
     @Override
     protected void finalize() throws Throwable {
-        super.finalize();
         destroy();
+        super.finalize();
     }
 
     private native void create(int receiver, int pin);
