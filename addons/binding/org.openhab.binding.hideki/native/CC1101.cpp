@@ -53,7 +53,7 @@ CC1101::CC1101(std::string device, const int& interrupt)
 
   // Reset CC1101
   if (mSpiDevice >= 0) {
-    std::array<uint8_t, 1> buffer = { 0x30 }; // Reset chip
+    std::array<uint8_t, 1> buffer = { 0x30 | WRITE_BYTE}; // Reset chip
     if (transfer(buffer.data(), buffer.size()) < 0) {
       perror("Unable to reset transmitter");
       close();
@@ -64,7 +64,7 @@ CC1101::CC1101(std::string device, const int& interrupt)
   if (mSpiDevice >= 0) {
     // http://www.ti.com/lit/ds/symlink/cc1101.pdf
     // http://www.ti.com/lit/an/swra215e/swra215e.pdf
-    std::array<uint8_t, 48> buffer = { 0x40 | WRITE_BURST, // 433.92 MHz, 2kHz data rate, 160kHz bandwidth
+    std::array<uint8_t, 48> buffer = { 0x00 | WRITE_BURST, // 433.92 MHz, 2kHz data rate, 160kHz bandwidth
       0x2E,  // IOCFG2        High-Impedance - GDO2 is not connected
       0x2E,  // IOCFG1        High-Impedance - GDO1 is also used as the SPI output from the CC1101
       0x0D,  // IOCFG0        GDO0 Output Pin Configuration
@@ -126,7 +126,7 @@ CC1101::CC1101(std::string device, const int& interrupt)
   }
 
   if (mSpiDevice >= 0) {
-    std::array<uint8_t, 9> buffer = { 0x7E | WRITE_BURST, // Power control read/write
+    std::array<uint8_t, 9> buffer = { 0x3E | WRITE_BURST, // Power control read/write
       0x00, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
     };
     if (transfer(buffer.data(), buffer.size()) < 0) {
@@ -136,11 +136,11 @@ CC1101::CC1101(std::string device, const int& interrupt)
   }
 
   if (mSpiDevice >= 0) {
-    std::array<uint8_t, 1> buffer = { 0x34 }; // Set to receive mode
+    std::array<uint8_t, 1> buffer = { 0x34 | WRITE_BYTE}; // Set to receive mode
     if (transfer(buffer.data(), buffer.size()) >= 0) {
       uint8_t state = 0xFF;
       do {
-        std::array<uint8_t, 2> buffer = { 0xF5 | READ_BYTE, 0 }; // Read chip state
+        std::array<uint8_t, 2> buffer = { 0x35 | READ_BURST, 0 }; // Read chip state
         if (transfer(buffer.data(), buffer.size()) >= 0) {
           state = buffer[1] & 0x1F;
         }
@@ -165,9 +165,9 @@ CC1101::State CC1101::isInitialized() const
 double CC1101::getRSSIValue() const
 {
   double result = std::numeric_limits<double>::max();
-  std::array<uint8_t, 2> buffer = { 0xF4 | READ_BYTE, 0 }; // Read RSSI
+  std::array<uint8_t, 2> buffer = { 0x34 | READ_BURST, 0 }; // Read RSSI
   if (transfer(buffer.data(), buffer.size()) >= 0) {
-    result = static_cast<double>(buffer[1]); // Cast unsiged to signed first
+    result = static_cast<double>(buffer[1]); // Cast unsigned to signed first
     if (result >= 128.0) {
       result -= 256.0;
     }
@@ -191,11 +191,18 @@ int CC1101::transfer(uint8_t* data, const uint32_t& length) const
     static struct spi_ioc_transfer spi = { 0 };
     std::memset(&spi, 0, sizeof(struct spi_ioc_transfer));
 
-    spi.tx_buf = (unsigned long)data;
-    spi.rx_buf = (unsigned long)data;
-    spi.len = length;
-
-    result = ioctl(mSpiDevice, SPI_IOC_MESSAGE(1), &spi);
+    result = ioctl(mSpiDevice, SPI_IOC_RD_BITS_PER_WORD, &spi.bits_per_word);
+    if (result >= 0) {
+      result = ioctl(mSpiDevice, SPI_IOC_RD_MAX_SPEED_HZ, &spi.speed_hz);
+      if (result >= 0) {
+        spi.tx_buf = (__u64)data;
+        spi.rx_buf = (__u64)data;
+        spi.len = length;
+        spi.delay_usecs = 0;
+        spi.cs_change = 0;
+        result = ioctl(mSpiDevice, SPI_IOC_MESSAGE(1), &spi);
+      }
+    }
   }
   return result;
 }

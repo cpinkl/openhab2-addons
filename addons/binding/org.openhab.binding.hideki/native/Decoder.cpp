@@ -126,7 +126,15 @@ void* Decoder::decode(void* parameter)
       if ((pc > 0) && (polldat.revents & POLLPRI)) {
         static uint8_t value = 0;
         if (read(polldat.fd, &value, 1) >= 0) {
-          duration = round((tNew.tv_nsec - tOld.tv_nsec) / 1000.0); // Pulse length in microseconds
+          struct timespec diff = {
+            .tv_sec = tNew.tv_sec - tOld.tv_sec,
+            .tv_nsec = tNew.tv_nsec - tOld.tv_nsec
+          };
+          if (diff.tv_nsec < 0) {
+            diff.tv_sec  -= 1;
+            diff.tv_nsec += 1000000000;
+          }
+          duration = round(diff.tv_sec * 1000000.0 + diff.tv_nsec / 1000.0); // Pulse length in microseconds
         }
       }
     }
