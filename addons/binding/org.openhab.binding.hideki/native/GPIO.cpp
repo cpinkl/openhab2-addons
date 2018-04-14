@@ -12,14 +12,19 @@
 #include <sys/stat.h>
 
 #include <type_traits>
+#include <string>
+
+static constexpr useconds_t TIME_FOR_WAIT = 1000; // 1 millisecond
 
 int GPIO::enable(const int& pin, Direction direction, Edge edge)
 {
   int result = 0;
+  static struct stat state;
   static char buffer[FILENAME_MAX] = { '\0' };
 
-  if (result == 0) {
-    int fd = open("/sys/class/gpio/export", O_WRONLY);
+  snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
+  if (stat(buffer, &state) != 0) {
+    int fd = open("/sys/class/gpio/export", O_WRONLY | O_SYNC);
     if (fd >= 0) {
       int bytes = snprintf(buffer, sizeof(buffer), "%d", pin);
       if (::write(fd, buffer, bytes) < 0) {
@@ -27,12 +32,6 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
         result = -1;
       }
       close(fd);
-
-      struct stat state;
-      snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
-      do {
-        sleep(1);
-      } while (stat(buffer, &state) != 0);
     } else {
       snprintf(buffer, sizeof(buffer), "Can not export pin %d", pin);
       result = -1;
@@ -41,11 +40,11 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
 
   if (result == 0) {
     snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d/direction", pin);
-    while (access(buffer, W_OK) == -1) {
-      sleep(1);
+    while ((stat(buffer, &state) != 0) || (access(buffer, W_OK) != 0)) {
+      usleep(TIME_FOR_WAIT);
     }
 
-    int fd = open(buffer, O_WRONLY);
+    int fd = open(buffer, O_WRONLY | O_SYNC);
     if (fd >= 0) {
       static const char* DIRECTIONS[] = { "in", "out" };
       auto index = static_cast<std::underlying_type<decltype(direction)>::type>(direction);
@@ -55,18 +54,18 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
       }
       close(fd);
     } else {
-      snprintf(buffer, sizeof(buffer), "Can not write to pin %d", pin);
+      snprintf(buffer, sizeof(buffer), "Can not open direction file for pin %d", pin);
       result = -1;
     }
   }
 
-  if ((result == 0) && (direction == Direction::IN)) {
+  if (result == 0) {
     snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d/edge", pin);
-    while (access(buffer, W_OK) == -1) {
-      sleep(1);
+    while ((stat(buffer, &state) != 0) || (access(buffer, W_OK) != 0)) {
+      usleep(TIME_FOR_WAIT);
     }
 
-    int fd = open(buffer, O_WRONLY);
+    int fd = open(buffer, O_WRONLY | O_SYNC);
     if (fd >= 0) {
       static const char* EDGES[] = { "none", "rising", "falling", "both" };
       auto index = static_cast<std::underlying_type<decltype(edge)>::type>(edge);
@@ -76,9 +75,17 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
       }
       close(fd);
     } else {
-      snprintf(buffer, sizeof(buffer), "Can not write to pin %d", pin);
+      snprintf(buffer, sizeof(buffer), "Can not open edge file for pin %d", pin);
       result = -1;
     }
+  }
+
+  if (result == 0) {
+    const bool read = (direction == GPIO::Direction::IN);
+    snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d/value", pin);
+    do {
+      usleep(TIME_FOR_WAIT);
+    } while ((stat(buffer, &state) != 0) || (access(buffer, read ? R_OK : W_OK) != 0));
   }
 
   if (result < 0) {
@@ -91,13 +98,13 @@ int GPIO::enable(const int& pin, Direction direction, Edge edge)
 int GPIO::disable(const int& pin)
 {
   int result = 0;
+  static struct stat state;
   static char buffer[FILENAME_MAX] = { '\0' };
 
-  struct stat state;
   snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
   if (stat(buffer, &state) == 0) {
     if (S_ISDIR(state.st_mode) || S_ISLNK(state.st_mode)) {
-      int fd = open("/sys/class/gpio/unexport", O_WRONLY);
+      int fd = open("/sys/class/gpio/unexport", O_WRONLY | O_SYNC);
       if (fd >= 0) {
         int bytes = snprintf(buffer, sizeof(buffer), "%d", pin);
         if (::write(fd, buffer, bytes) < 0) {
@@ -105,11 +112,12 @@ int GPIO::disable(const int& pin)
           result = -1;
         }
         close(fd);
-
-        snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
-        do {
-          sleep(1);
-        } while (access(buffer, F_OK) == 0);
+        if(result == 0) {
+          snprintf(buffer, sizeof(buffer), "/sys/class/gpio/gpio%d", pin);
+          do {
+            usleep(TIME_FOR_WAIT);
+          } while ((stat(buffer, &state) == 0) || (access(buffer, F_OK) == 0));
+        }
       } else {
         snprintf(buffer, sizeof(buffer), "Can not unexport pin %d", pin);
         result = -1;
@@ -132,7 +140,7 @@ uint8_t GPIO::read(const int& pin, const int& timeout, unsigned int& duration)
   // Prepare interrupt struct
   snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", pin);
   struct pollfd polldat = { 0 };
-  polldat.fd = open(buffer, O_RDONLY);
+  polldat.fd = open(buffer, O_RDONLY | O_SYNC);
   polldat.events = POLLPRI | POLLERR;
   duration = timeout;
 
@@ -178,7 +186,7 @@ int GPIO::write(const int& pin, const uint8_t& value)
   static char buffer[FILENAME_MAX] = { '\0' };
 
   snprintf(buffer, FILENAME_MAX, "/sys/class/gpio/gpio%d/value", pin);
-  int fd = open(buffer, O_WRONLY);
+  int fd = open(buffer, O_WRONLY | O_SYNC);
   if (fd >= 0) {
     int bytes = snprintf(buffer, sizeof(buffer), "%d", value);
     if (::write(fd, buffer, bytes) < 0) {

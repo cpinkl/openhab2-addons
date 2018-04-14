@@ -1,15 +1,18 @@
 #pragma once
 
+#include "concurrentqueue.h"
 #include "Receiver.h"
 
 #include <inttypes.h>
 #include <pthread.h>
 
 #include <array>
+#include <atomic>
 
 class Decoder
 {
   public:
+    using PulseDurationType = decltype(timespec::tv_sec);
     static constexpr std::size_t DATA_BUFFER_LENGTH = 15;
 
     Decoder(const int& pin, const Receiver& receiver);
@@ -30,6 +33,7 @@ class Decoder
     int mPin;
     int mTimeout;
     const Receiver& mReceiver;
+    pthread_rwlock_t mFetchNewDataLock;
 
     volatile bool mReceivedNewData;
     struct ReceivedData {
@@ -41,8 +45,14 @@ class Decoder
     } mReceivedData;
     static void* decode(void* parameter);
 
-    volatile bool mStopDecoderThread;
-    bool mDecoderThreadIsAlive;
     pthread_t mDecoderThread;
-    pthread_rwlock_t mDecoderLock;
+    std::atomic<bool> mStopDecoderThread;
+    std::atomic<bool> mDecoderThreadIsAlive;
+
+    moodycamel::ConcurrentQueue<PulseDurationType> mPulseData;
+    static void* receive(void* parameter);
+
+    pthread_t mReceiverThread;
+    std::atomic<bool> mStopReceiverThread;
+    std::atomic<bool> mReceiverThreadIsAlive;
 };
