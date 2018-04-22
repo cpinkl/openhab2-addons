@@ -199,16 +199,16 @@ public class PLCPulseHandler extends PLCCommonHandler {
 
     @Override
     protected boolean isValid(final @NonNull String name) {
-        if (3 <= name.length() && (name.length() <= 7)) {
+        if (2 <= name.length() && (name.length() <= 7)) {
             final String kind = config.getObservedBlockKind();
-            if (Character.isDigit(name.charAt(2))) {
+            if (Character.isDigit(name.charAt(1))) {
+                boolean valid = kind.equalsIgnoreCase("I") || kind.equalsIgnoreCase("Q");
+                return name.startsWith(kind) && (valid || kind.equalsIgnoreCase("M"));
+            } else if (Character.isDigit(name.charAt(2))) {
                 final String bKind = getBlockKind();
                 boolean valid = kind.equalsIgnoreCase("NI") || kind.equalsIgnoreCase("NQ");
                 valid = name.startsWith(kind) && (valid || kind.equalsIgnoreCase("VB"));
                 return (name.startsWith(bKind) && bKind.equalsIgnoreCase("VB")) || valid;
-            } else if (Character.isDigit(name.charAt(1))) {
-                boolean valid = kind.equalsIgnoreCase("I") || kind.equalsIgnoreCase("Q");
-                return name.startsWith(kind) && (valid || kind.equalsIgnoreCase("M"));
             }
         }
         return false;

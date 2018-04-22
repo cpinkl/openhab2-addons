@@ -10,6 +10,7 @@ package org.openhab.binding.plclogo.handler;
 
 import static org.openhab.binding.plclogo.PLCLogoBindingConstants.*;
 
+import java.time.DateTimeException;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -371,13 +372,18 @@ public class PLCBridgeHandler extends BaseBridgeHandler {
     private ZonedDateTime getRtcAt(byte[] buffer, int pos) {
         ZonedDateTime rtc = ZonedDateTime.now();
         if (!LOGO_0BA7.equalsIgnoreCase(getLogoFamily())) {
-            final int year = rtc.getYear() / 100;
-            rtc = rtc.withYear(100 * year + buffer[pos]);
-            rtc = rtc.withMonth(buffer[pos + 1]);
-            rtc = rtc.withDayOfMonth(buffer[pos + 2]);
-            rtc = rtc.withHour(buffer[pos + 3]);
-            rtc = rtc.withMinute(buffer[pos + 4]);
-            rtc = rtc.withSecond(buffer[pos + 5]);
+            try {
+                final int year = rtc.getYear() / 100;
+                rtc = rtc.withYear(100 * year + buffer[pos]);
+                rtc = rtc.withMonth(buffer[pos + 1]);
+                rtc = rtc.withDayOfMonth(buffer[pos + 2]);
+                rtc = rtc.withHour(buffer[pos + 3]);
+                rtc = rtc.withMinute(buffer[pos + 4]);
+                rtc = rtc.withSecond(buffer[pos + 5]);
+            } catch (DateTimeException exception) {
+                rtc = ZonedDateTime.now();
+                logger.warn("Return local server time: {}.", exception.getMessage());
+            }
         }
         return rtc;
     }

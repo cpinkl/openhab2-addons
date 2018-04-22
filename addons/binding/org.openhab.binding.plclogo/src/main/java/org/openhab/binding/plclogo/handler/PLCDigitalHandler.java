@@ -222,7 +222,8 @@ public class PLCDigitalHandler extends PLCCommonHandler {
         final String family = getLogoFamily();
         logger.debug("Get block number of {} LOGO! for {} blocks.", family, kind);
 
-        return LOGO_BLOCK_NUMBER.get(family).get(kind).intValue();
+        final Integer number = LOGO_BLOCK_NUMBER.get(family).get(kind);
+        return number == null ? 0 : number.intValue();
     }
 
     @Override
