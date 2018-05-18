@@ -123,7 +123,7 @@ public class PLCLogoBindingConstants {
         .put("VW", new Layout(0, 850))
         .put("I", new Layout(923, 3)) // Digital inputs starts at 923 for 3 bytes
         .put("Q", new Layout(942, 2)) // Digital outputs starts at 942 for 2 bytes
-        .put("M", new Layout(948, 2)) // Digital markers starts at 948 for 2 bytes
+        .put("M", new Layout(948, 4)) // Digital markers starts at 948 for 4 bytes
         .put("AI", new Layout(926, 16)) // Analog inputs starts at 926 for 16 bytes -> 8 words
         .put("AQ", new Layout(944, 4)) // Analog outputs starts at 944 for 4 bytes -> 2 words
         .put("AM", new Layout(952, 32)) // Analog markers starts at 952 for 32 bytes -> 16 words
