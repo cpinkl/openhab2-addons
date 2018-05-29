@@ -14,10 +14,10 @@
 
 		<channels>
 			<channel id="sensor" typeId="sensor"/>
-            <channel id="battery" typeId="battery"/>
-            <channel id="message" typeId="message"/>
-            <channel id="rssi" typeId="rssi"/>
-            <channel id="updated" typeId="updated"/>
+			<channel id="battery" typeId="battery"/>
+			<channel id="message" typeId="message"/>
+			<channel id="rssi" typeId="rssi"/>
+			<channel id="updated" typeId="updated"/>
 			<channel id="temperature" typeId="temperature"/>
 			<channel id="chill" typeId="chill"/>
 			<channel id="gust" typeId="gust"/>
@@ -25,7 +25,7 @@
 			<channel id="direction" typeId="direction"/>
 		</channels>
 	</thing-type>
-  
+
 	<channel-type id="chill">
 		<item-type>Number</item-type>
 		<label>Wind chill</label>

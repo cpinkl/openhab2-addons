@@ -98,26 +98,21 @@ public class HidekiReceiverHandler extends BaseBridgeHandler {
             public void run() {
                 final Integer pin = config.getGpioPin();
                 final String device = config.getDevice();
-                if ((pin != null) && (decoder == null)) {
-                    final Integer interrupt = config.getInterrupt();
-                    final HidekiReceiver.Kind kind = HidekiReceiver.Kind.CC1101;
-                    decoder = new HidekiDecoder(new HidekiReceiver(kind, device, interrupt), pin);
-                    decoder.setTimeOut(config.getTimeout().intValue());
-                    if (decoder.start()) {
-                        if (readerJob == null) {
-                            final Integer interval = config.getRefreshRate();
-                            logger.info("Creating new reader job on pin {} with interval {} sec.", pin, interval);
-                            readerJob = scheduler.scheduleWithFixedDelay(dataReader, 1, interval, TimeUnit.SECONDS);
-                        }
-                        updateStatus(ThingStatus.ONLINE);
-                    } else {
-                        final String message = "Can not start decoder on pin: " + pin.toString() + ".";
-                        updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, message);
-                        decoder = null;
+                final Integer interrupt = config.getInterrupt();
+                final HidekiReceiver.Kind kind = HidekiReceiver.Kind.valueOf(config.getReceiver());
+                decoder = new HidekiDecoder(new HidekiReceiver(kind, device, interrupt), pin);
+                decoder.setTimeOut(config.getTimeout().intValue());
+                if (decoder.start()) {
+                    if (readerJob == null) {
+                        final Integer interval = config.getRefreshRate();
+                        logger.info("Creating new reader job on pin {} with interval {} sec.", pin, interval);
+                        readerJob = scheduler.scheduleWithFixedDelay(dataReader, 1, interval, TimeUnit.SECONDS);
                     }
+                    updateStatus(ThingStatus.ONLINE);
                 } else {
-                    final String message = "Can not initialize decoder. Please, check parameter.";
-                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.CONFIGURATION_ERROR, message);
+                    final String message = "Can not start decoder on pin: " + pin.toString() + ".";
+                    updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR, message);
+                    decoder = null;
                 }
             }
         });

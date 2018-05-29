@@ -24,12 +24,12 @@
 		<state readOnly="true"></state>
 	</channel-type>
 
-    <channel-type id="battery">
-        <item-type>Switch</item-type>
-        <label>Battery</label>
-        <description>Received battery state</description>
-        <state readOnly="true"></state>
-    </channel-type>
+	<channel-type id="battery">
+		<item-type>Switch</item-type>
+		<label>Battery</label>
+		<description>Received battery state</description>
+		<state readOnly="true"></state>
+	</channel-type>
 
 	<channel-type id="message">
 		<item-type>Number</item-type>
@@ -38,19 +38,19 @@
 		<state readOnly="true"></state>
 	</channel-type>
 
-    <channel-type id="rssi">
-        <item-type>Number</item-type>
-        <label>Sensor signal RSSI</label>
-        <description>Received sensor RSSI value</description>
-        <state readOnly="true"></state>
-    </channel-type>
+	<channel-type id="rssi">
+		<item-type>Number</item-type>
+		<label>Sensor signal RSSI</label>
+		<description>Received sensor RSSI value</description>
+		<state readOnly="true"></state>
+	</channel-type>
 
-    <channel-type id="updated">
-        <item-type>DateTime</item-type>
-        <label>Last update</label>
-        <description>Timestamp of the last update</description>
-        <state readOnly="true"></state>
-    </channel-type>
+	<channel-type id="updated">
+		<item-type>DateTime</item-type>
+		<label>Last update</label>
+		<description>Timestamp of the last update</description>
+		<state readOnly="true"></state>
+	</channel-type>
 
 	<channel-type id="temperature">
 		<item-type>Number</item-type>

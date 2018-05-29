@@ -44,7 +44,7 @@ public class HidekiReceiverConfiguration {
      *
      * @return Configured GPIO pin
      */
-    public Integer getGpioPin() {
+    public @NonNull Integer getGpioPin() {
         return pin;
     }
 
